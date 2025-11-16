@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState, useRef, useEffect } from 'react';
 import { Component, Location, ProjectSuggestion, InventoryItem } from './types';
 import { useInventory } from './context';
 
@@ -56,6 +56,90 @@ export const SecondaryButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElem
       {children}
     </button>
   );
+};
+
+// --- Quantity Editor ---
+interface QuantityEditorProps {
+    value: number;
+    onChange: (newValue: number) => void;
+}
+const QuantityEditor: React.FC<QuantityEditorProps> = ({ value, onChange }) => {
+    const [inputValue, setInputValue] = useState(value.toString());
+    const intervalRef = useRef<number | null>(null);
+    const timeoutRef = useRef<number | null>(null);
+    const valueRef = useRef(value);
+
+    useEffect(() => {
+        setInputValue(value.toString());
+        valueRef.current = value;
+    }, [value]);
+
+    const handleChange = (newValue: number) => {
+        const clampedValue = Math.max(0, newValue);
+        if (clampedValue !== valueRef.current) {
+            onChange(clampedValue);
+        }
+    };
+
+    const startChanging = (delta: number) => {
+        handleChange(valueRef.current + delta);
+        timeoutRef.current = window.setTimeout(() => {
+            intervalRef.current = window.setInterval(() => {
+                handleChange(valueRef.current + delta);
+            }, 80);
+        }, 400);
+    };
+
+    const stopChanging = () => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setInputValue(e.target.value);
+    };
+
+    const handleInputBlur = () => {
+        const num = parseInt(inputValue, 10);
+        if (!isNaN(num)) {
+            handleChange(num);
+        } else {
+            setInputValue(value.toString()); // Revert on invalid input
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-2">
+            <button
+                onMouseDown={() => startChanging(-1)}
+                onMouseUp={stopChanging}
+                onMouseLeave={stopChanging}
+                className="p-1.5 rounded-full bg-gray-600 hover:bg-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
+                aria-label="Decrement quantity"
+            >
+                <MinusIcon />
+            </button>
+            <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={inputValue}
+                onChange={handleInputChange}
+                onBlur={handleInputBlur}
+                className="input-style !w-20 text-center text-lg font-bold py-1"
+                aria-label="Current quantity"
+            />
+            <button
+                onMouseDown={() => startChanging(1)}
+                onMouseUp={stopChanging}
+                onMouseLeave={stopChanging}
+                className="p-1.5 rounded-full bg-gray-600 hover:bg-green-500 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+                aria-label="Increment quantity"
+            >
+                <PlusIcon />
+            </button>
+        </div>
+    );
 };
 
 
@@ -126,23 +210,11 @@ interface ComponentDetailModalProps {
     onClose: () => void;
 }
 export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ component, isOpen, onClose }) => {
-    const { inventory, updateInventoryItem, findLocationById, deleteComponent } = useInventory();
+    const { inventory, updateInventoryItem, findLocationById } = useInventory();
 
     if (!component) return null;
 
     const inventoryForComponent = inventory.filter(item => item.componentId === component.id);
-
-    const handleQuantityChange = (item: InventoryItem, delta: number) => {
-        const newQuantity = item.quantity + delta;
-        updateInventoryItem(item.componentId, item.locationId, newQuantity);
-    };
-    
-    const handleDelete = () => {
-        if (window.confirm(`Are you sure you want to permanently delete ${component.name}? This will remove it from all locations.`)) {
-            deleteComponent(component.id);
-            onClose();
-        }
-    };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose} title={component.name}>
@@ -187,19 +259,17 @@ export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ comp
                                         <p className="font-semibold">{location?.name || 'Unknown Location'}</p>
                                         <p className="text-sm text-gray-400">{location?.description}</p>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => handleQuantityChange(item, -1)} className="p-1 rounded-full bg-gray-600 hover:bg-red-500 transition-colors"><MinusIcon /></button>
-                                        <span className="text-lg font-bold w-10 text-center">{item.quantity}</span>
-                                        <button onClick={() => handleQuantityChange(item, 1)} className="p-1 rounded-full bg-gray-600 hover:bg-green-500 transition-colors"><PlusIcon /></button>
-                                    </div>
+                                    <QuantityEditor
+                                        value={item.quantity}
+                                        onChange={(newQuantity) => updateInventoryItem(item.componentId, item.locationId, newQuantity)}
+                                    />
                                 </div>
                             );
                         })}
                     </div>
                 </div>
             </div>
-            <div className="mt-6 flex justify-between items-center">
-                 <Button className="bg-red-700 hover:bg-red-600" onClick={handleDelete}>Delete Component</Button>
+            <div className="mt-6 flex justify-end items-center">
                 <SecondaryButton onClick={onClose}>Close</SecondaryButton>
             </div>
         </Modal>
