@@ -6,6 +6,7 @@ interface InventoryContextType {
   inventory: InventoryItem[];
   locations: Location[];
   addComponent: (component: Component) => void;
+  deleteComponent: (componentId: string) => void;
   addInventoryItem: (item: Omit<InventoryItem, 'id'>) => void;
   updateInventoryItem: (componentId: string, locationId: string, quantity: number) => void;
   addLocation: (location: Omit<Location, 'id'>) => void;
@@ -67,6 +68,11 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     }
   };
 
+  const deleteComponent = (componentId: string) => {
+    setComponents(prev => prev.filter(c => c.id !== componentId));
+    setInventory(prev => prev.filter(i => i.componentId !== componentId));
+  };
+
   const addInventoryItem = (item: Omit<InventoryItem, 'id'>) => {
     setInventory(prev => {
         const existing = prev.find(i => i.componentId === item.componentId && i.locationId === item.locationId);
@@ -112,7 +118,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   }, [inventory, findComponentById, findLocationById]);
 
   return (
-    <InventoryContext.Provider value={{ components, inventory, locations, addComponent, addInventoryItem, updateInventoryItem, addLocation, findComponentById, findLocationById, getInventoryWithDetails }}>
+    <InventoryContext.Provider value={{ components, inventory, locations, addComponent, deleteComponent, addInventoryItem, updateInventoryItem, addLocation, findComponentById, findLocationById, getInventoryWithDetails }}>
       {children}
     </InventoryContext.Provider>
   );

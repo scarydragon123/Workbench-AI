@@ -106,7 +106,7 @@ const IdentifyView: React.FC = () => {
           </div>
           <div className="space-y-4">
             <label htmlFor="manual-input" className="block text-sm font-medium text-gray-300">Or Enter Details Manually</label>
-            <textarea id="manual-input" rows={4} className="input-style" placeholder="e.g., 'Blue resistor with bands brown, black, orange, gold'" value={manualInput} onChange={(e) => setManualInput(e.target.value)}></textarea>
+            <textarea id="manual-input" rows={4} className="input-style py-2 px-3" placeholder="e.g., 'Blue resistor with bands brown, black, orange, gold'" value={manualInput} onChange={(e) => setManualInput(e.target.value)}></textarea>
              <div className="flex gap-4">
                 <Button onClick={handleIdentify} disabled={isLoading || (!imageFile && !manualInput)}>
                     {isLoading ? 'Identifying...' : 'Identify'}
@@ -147,11 +147,11 @@ const IdentifyView: React.FC = () => {
           <h3 className="text-lg font-semibold">{result?.name}</h3>
           <div>
             <label htmlFor="quantity" className="block text-sm font-medium text-gray-300">Quantity</label>
-            <input type="number" id="quantity" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="input-style mt-1" />
+            <input type="number" id="quantity" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="input-style mt-1 py-2 px-3" />
           </div>
           <div>
             <label htmlFor="location" className="block text-sm font-medium text-gray-300">Location</label>
-            <select id="location" value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="input-style mt-1">
+            <select id="location" value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="input-style mt-1 py-2 px-3">
               {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
             </select>
           </div>
@@ -207,7 +207,7 @@ const InventoryView: React.FC = () => {
                 placeholder="Search inventory..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="input-style pl-10 w-full sm:w-64"
+                className="input-style pl-10 pr-3 py-2 w-full sm:w-64"
             />
         </div>
       </div>
@@ -314,11 +314,11 @@ const LocationsView: React.FC = () => {
                 <h2 className="text-xl font-bold text-gray-200">Add New Location</h2>
                 <div>
                     <label htmlFor="loc-name" className="block text-sm font-medium text-gray-300">Location Name</label>
-                    <input type="text" id="loc-name" value={name} onChange={e => setName(e.target.value)} className="input-style mt-1" placeholder="e.g., Small Parts Box" required/>
+                    <input type="text" id="loc-name" value={name} onChange={e => setName(e.target.value)} className="input-style mt-1 py-2 px-3" placeholder="e.g., Small Parts Box" required/>
                 </div>
                 <div>
                     <label htmlFor="loc-desc" className="block text-sm font-medium text-gray-300">Description</label>
-                    <input type="text" id="loc-desc" value={description} onChange={e => setDescription(e.target.value)} className="input-style mt-1" placeholder="e.g., On the second shelf" required/>
+                    <input type="text" id="loc-desc" value={description} onChange={e => setDescription(e.target.value)} className="input-style mt-1 py-2 px-3" placeholder="e.g., On the second shelf" required/>
                 </div>
                 <Button type="submit">Add Location</Button>
             </form>
@@ -362,7 +362,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gray-900 text-gray-100 font-sans">
       <style>{`
-        .input-style { background-color: #1F2937; border: 1px solid #4B5563; color: #F3F4F6; border-radius: 0.5rem; padding: 0.5rem 0.75rem; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; }
+        .input-style { background-color: #1F2937; border: 1px solid #4B5563; color: #F3F4F6; border-radius: 0.5rem; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; }
         .input-style:focus { border-color: #2DD4BF; box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.5); outline: none; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }

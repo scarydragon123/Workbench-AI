@@ -74,7 +74,7 @@ export const ComponentCard: React.FC<ComponentCardProps> = ({ component, quantit
             <div className="flex-1">
                 <h3 className="text-lg font-bold text-teal-400">{component.name}</h3>
                 <p className="text-sm text-gray-400">{component.category}</p>
-                <div className="text-2xl font-semibold my-2">{quantity} <span className="text-base font-normal text-gray-500">in stock</span></div>
+                <div className="text-2xl font-semibold my-2">{quantity} <span className="text-base font-normal text-gray-500">in workbench</span></div>
                 <p className="text-sm text-gray-300">
                     <span className="font-semibold">Location:</span> {location.name}
                 </p>
@@ -126,7 +126,7 @@ interface ComponentDetailModalProps {
     onClose: () => void;
 }
 export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ component, isOpen, onClose }) => {
-    const { inventory, updateInventoryItem, findLocationById } = useInventory();
+    const { inventory, updateInventoryItem, findLocationById, deleteComponent } = useInventory();
 
     if (!component) return null;
 
@@ -135,6 +135,13 @@ export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ comp
     const handleQuantityChange = (item: InventoryItem, delta: number) => {
         const newQuantity = item.quantity + delta;
         updateInventoryItem(item.componentId, item.locationId, newQuantity);
+    };
+    
+    const handleDelete = () => {
+        if (window.confirm(`Are you sure you want to permanently delete ${component.name}? This will remove it from all locations.`)) {
+            deleteComponent(component.id);
+            onClose();
+        }
     };
 
     return (
@@ -191,7 +198,8 @@ export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ comp
                     </div>
                 </div>
             </div>
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-between items-center">
+                 <Button className="bg-red-700 hover:bg-red-600" onClick={handleDelete}>Delete Component</Button>
                 <SecondaryButton onClick={onClose}>Close</SecondaryButton>
             </div>
         </Modal>
