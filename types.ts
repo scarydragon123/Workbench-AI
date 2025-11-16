@@ -7,6 +7,8 @@ export interface Component {
   tags: string[];
   imageUrl?: string;
   description?: string;
+  typicalUses?: string[];
+  recommendedCircuits?: string[];
 }
 
 export interface InventoryItem {

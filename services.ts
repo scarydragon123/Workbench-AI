@@ -34,6 +34,8 @@ export const identifyComponent = async (imageFile: File | null, manualInput: str
     Provide a detailed JSON response. The main name should be the specific part number if available (e.g., 'ESP32-WROOM-32'), not a generic name.
     The category should be one of: 'MCU', 'Sensor', 'Passive', 'IC', 'Module', 'Connector', 'Mechanical'.
     Include a short 'description' of what the component is and does.
+    Provide a list of 'typicalUses' (e.g., 'pull-up resistor', 'audio filtering').
+    Provide a list of 'recommendedCircuits' (e.g., 'Voltage Divider with a 10k resistor').
     Provide common use-case tags.
     If you are unsure, make a best guess and indicate low confidence in the description.
     Manual input: "${manualInput}"`;
@@ -62,6 +64,14 @@ export const identifyComponent = async (imageFile: File | null, manualInput: str
                 additionalProperties: { type: Type.STRING }
             },
             tags: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            typicalUses: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING }
+            },
+            recommendedCircuits: {
               type: Type.ARRAY,
               items: { type: Type.STRING }
             }

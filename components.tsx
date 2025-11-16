@@ -223,7 +223,6 @@ export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ comp
                     {component.imageUrl && <img src={component.imageUrl} alt={component.name} className="w-full md:w-32 h-32 object-cover rounded-lg" />}
                     <div className="flex-1">
                         <p className="text-md text-gray-400 mb-2">{component.category}</p>
-                        <p className="text-gray-300 mb-4">{component.description || "No description available."}</p>
                         <div className="flex flex-wrap gap-2">
                             {component.tags.map(tag => <span key={tag} className="bg-gray-700 text-teal-300 text-xs font-semibold px-2 py-1 rounded-full">{tag}</span>)}
                         </div>
@@ -244,6 +243,34 @@ export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ comp
                             </ul>
                         ) : (
                             <p className="px-4 py-3 text-sm text-gray-500">No specifications available.</p>
+                        )}
+                    </div>
+                </div>
+
+                <div>
+                    <h4 className="font-semibold text-gray-200 mb-2 mt-4">Component Knowledge</h4>
+                    <div className="bg-gray-900/50 p-4 rounded-md border border-gray-700 space-y-4">
+                        <div>
+                            <h5 className="text-sm font-bold text-teal-400 mb-1">Description</h5>
+                            <p className="text-sm text-gray-300">{component.description || 'No description available.'}</p>
+                        </div>
+                        
+                        {component.typicalUses && component.typicalUses.length > 0 && (
+                            <div>
+                                <h5 className="text-sm font-bold text-teal-400 mb-1">Typical Uses</h5>
+                                <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
+                                    {component.typicalUses.map((use, index) => <li key={index}>{use}</li>)}
+                                </ul>
+                            </div>
+                        )}
+                        
+                        {component.recommendedCircuits && component.recommendedCircuits.length > 0 && (
+                            <div>
+                                <h5 className="text-sm font-bold text-teal-400 mb-1">Recommended Circuits</h5>
+                                <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
+                                    {component.recommendedCircuits.map((circuit, index) => <li key={index}>{circuit}</li>)}
+                                </ul>
+                            </div>
                         )}
                     </div>
                 </div>

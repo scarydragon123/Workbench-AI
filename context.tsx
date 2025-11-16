@@ -24,8 +24,26 @@ const initialLocations: Location[] = [
 ];
 
 const initialComponents: Component[] = [
-    { id: 'comp-1', name: '10kΩ Resistor', category: 'Passive', specs: { Resistance: '10kΩ', Tolerance: '5%', Power: '1/4W' }, tags: ['pull-up', 'voltage-divider'], description: 'A common resistor used in many circuits.' },
-    { id: 'comp-2', name: 'ESP32-WROOM-32', category: 'MCU', specs: { 'Wi-Fi': '802.11 b/g/n', Bluetooth: 'v4.2 BR/EDR & BLE' }, tags: ['iot', 'wifi', 'microcontroller'], description: 'A powerful microcontroller with integrated Wi-Fi and Bluetooth.' },
+    { 
+        id: 'comp-1', 
+        name: '10kΩ Resistor', 
+        category: 'Passive', 
+        specs: { Resistance: '10kΩ', Tolerance: '5%', Power: '1/4W' }, 
+        tags: ['pull-up', 'voltage-divider'], 
+        description: 'A common resistor used in many circuits to impede the flow of current.',
+        typicalUses: ['Pull-up/pull-down resistor for digital logic', 'Voltage dividers', 'Current limiting for LEDs'],
+        recommendedCircuits: ['Simple voltage divider with another resistor', 'RC filter with a capacitor']
+    },
+    { 
+        id: 'comp-2', 
+        name: 'ESP32-WROOM-32', 
+        category: 'MCU', 
+        specs: { 'Wi-Fi': '802.11 b/g/n', Bluetooth: 'v4.2 BR/EDR & BLE' }, 
+        tags: ['iot', 'wifi', 'microcontroller'], 
+        description: 'A powerful microcontroller with integrated Wi-Fi and Bluetooth, ideal for IoT projects.',
+        typicalUses: ['IoT sensor nodes', 'Home automation hubs', 'Wireless controllers'],
+        recommendedCircuits: ['Basic power circuit (3.3V)', 'Connecting to I2C sensors like MPU-6050']
+    },
 ];
 
 const initialInventory: InventoryItem[] = [
