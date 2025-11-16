@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext, useCallback, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback, useMemo, ReactNode } from 'react';
 import { InventoryItem, Component, Location } from './types';
 
 interface InventoryContextType {
@@ -62,18 +62,21 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     localStorage.setItem('ws_locations', JSON.stringify(locations));
   }, [locations]);
 
-  const addComponent = (component: Component) => {
-    if (!components.some(c => c.id === component.id)) {
-        setComponents(prev => [...prev, component]);
-    }
-  };
+  const addComponent = useCallback((component: Component) => {
+    setComponents(prev => {
+        if (!prev.some(c => c.id === component.id)) {
+            return [...prev, component];
+        }
+        return prev;
+    });
+  }, []);
 
-  const deleteComponent = (componentId: string) => {
+  const deleteComponent = useCallback((componentId: string) => {
     setComponents(prev => prev.filter(c => c.id !== componentId));
     setInventory(prev => prev.filter(i => i.componentId !== componentId));
-  };
+  }, []);
 
-  const addInventoryItem = (item: Omit<InventoryItem, 'id'>) => {
+  const addInventoryItem = useCallback((item: Omit<InventoryItem, 'id'>) => {
     setInventory(prev => {
         const existing = prev.find(i => i.componentId === item.componentId && i.locationId === item.locationId);
         if (existing) {
@@ -81,9 +84,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
         }
         return [...prev, item];
     });
-  };
+  }, []);
 
-    const updateInventoryItem = (componentId: string, locationId: string, quantity: number) => {
+    const updateInventoryItem = useCallback((componentId: string, locationId: string, quantity: number) => {
         setInventory(prev => {
             if (quantity <= 0) {
                 return prev.filter(item => !(item.componentId === componentId && item.locationId === locationId));
@@ -94,12 +97,12 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
                     : item
             );
         });
-    };
+    }, []);
 
-  const addLocation = (location: Omit<Location, 'id'>) => {
+  const addLocation = useCallback((location: Omit<Location, 'id'>) => {
     const newLocation = { ...location, id: `loc-${Date.now()}` };
     setLocations(prev => [...prev, newLocation]);
-  };
+  }, []);
   
   const findComponentById = useCallback((id: string) => components.find(c => c.id === id), [components]);
   const findLocationById = useCallback((id: string) => locations.find(l => l.id === id), [locations]);
@@ -116,9 +119,36 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
         })
         .filter((item): item is InventoryItem & { component: Component; location: Location } => item !== null);
   }, [inventory, findComponentById, findLocationById]);
+  
+  const value = useMemo(() => ({
+    components, 
+    inventory, 
+    locations, 
+    addComponent, 
+    deleteComponent, 
+    addInventoryItem, 
+    updateInventoryItem, 
+    addLocation, 
+    findComponentById, 
+    findLocationById, 
+    getInventoryWithDetails
+  }), [
+    components, 
+    inventory, 
+    locations, 
+    addComponent, 
+    deleteComponent, 
+    addInventoryItem, 
+    updateInventoryItem, 
+    addLocation, 
+    findComponentById, 
+    findLocationById, 
+    getInventoryWithDetails
+  ]);
+
 
   return (
-    <InventoryContext.Provider value={{ components, inventory, locations, addComponent, deleteComponent, addInventoryItem, updateInventoryItem, addLocation, findComponentById, findLocationById, getInventoryWithDetails }}>
+    <InventoryContext.Provider value={value}>
       {children}
     </InventoryContext.Provider>
   );
