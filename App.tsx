@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useInventory } from './context';
 import { Component, View, ProjectSuggestion, Location as LocationType } from './types';
 import { identifyComponent, getProjectIdeas } from './services';
-import { Button, SecondaryButton, ScanIcon, InventoryIcon, ProjectsIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal } from './components';
+import { Button, SecondaryButton, ScanIcon, InventoryIcon, ProjectsIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal } from './components';
 
 // --- VIEWS ---
 
@@ -171,6 +171,7 @@ const InventoryView: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
+  const [isAddComponentModalOpen, setIsAddComponentModalOpen] = useState(false);
 
   const filteredInventory = allInventory.filter(item => {
     const query = searchQuery.toLowerCase();
@@ -189,7 +190,9 @@ const InventoryView: React.FC = () => {
         <div className="p-6 text-center text-gray-500 flex flex-col items-center justify-center h-full">
             <InventoryIcon />
             <h2 className="mt-4 text-xl font-semibold text-gray-300">Your Workshop is Tidy!</h2>
-            <p className="mt-1">Your inventory is empty. Use the 'Identify' tab to scan and add your first component.</p>
+            <p className="mt-1">Your inventory is empty. Use the 'Identify' tab or manually add a component to get started.</p>
+            <Button className="mt-6" onClick={() => setIsAddComponentModalOpen(true)}>Add First Component</Button>
+            <AddComponentModal isOpen={isAddComponentModalOpen} onClose={() => setIsAddComponentModalOpen(false)} />
         </div>
     );
   }
@@ -198,17 +201,20 @@ const InventoryView: React.FC = () => {
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-4">
         <h1 className="text-3xl font-bold text-teal-400">Inventory</h1>
-        <div className="relative">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                <SearchIcon />
-            </span>
-            <input 
-                type="text"
-                placeholder="Search inventory..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="input-style pl-10 pr-3 py-2 w-full sm:w-64"
-            />
+        <div className="flex items-center gap-4">
+            <div className="relative">
+                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <SearchIcon />
+                </span>
+                <input 
+                    type="text"
+                    placeholder="Search inventory..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="input-style pl-10 pr-3 py-2 w-full sm:w-64"
+                />
+            </div>
+            <Button onClick={() => setIsAddComponentModalOpen(true)}>Add Component</Button>
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -234,6 +240,7 @@ const InventoryView: React.FC = () => {
         isOpen={!!selectedComponentId}
         onClose={() => setSelectedComponentId(null)}
       />
+       <AddComponentModal isOpen={isAddComponentModalOpen} onClose={() => setIsAddComponentModalOpen(false)} />
     </div>
   );
 };
@@ -364,6 +371,7 @@ const App: React.FC = () => {
       <style>{`
         .input-style { background-color: #1F2937; border: 1px solid #4B5563; color: #F3F4F6; border-radius: 0.5rem; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; }
         .input-style:focus { border-color: #2DD4BF; box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.5); outline: none; }
+        .label-style { display: block; text-sm; font-medium; color: #D1D5DB; margin-bottom: 0.25rem; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
         @keyframes scale-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }

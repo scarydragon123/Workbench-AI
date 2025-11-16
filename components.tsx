@@ -18,6 +18,7 @@ export const WarningIcon = () => <svg className="w-5 h-5 text-yellow-400" xmlns=
 export const SearchIcon = () => <svg {...iconProps} strokeWidth={2} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>;
 const PlusIcon = () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>;
 const MinusIcon = () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" /></svg>;
+const TrashIcon = () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>;
 
 
 // --- Modal ---
@@ -31,7 +32,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-300" onClick={onClose}>
-      <div className="bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-md m-4 transform transition-all duration-300 scale-95 animate-scale-in" onClick={e => e.stopPropagation()}>
+      <div className="bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-lg m-4 transform transition-all duration-300 scale-95 animate-scale-in" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-teal-400">{title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white"><CloseIcon /></button>
@@ -299,6 +300,151 @@ export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ comp
             <div className="mt-6 flex justify-end items-center">
                 <SecondaryButton onClick={onClose}>Close</SecondaryButton>
             </div>
+        </Modal>
+    );
+};
+
+interface AddComponentModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+export const AddComponentModal: React.FC<AddComponentModalProps> = ({ isOpen, onClose }) => {
+    const { addComponent, addInventoryItem, locations } = useInventory();
+    
+    const [name, setName] = useState('');
+    const [category, setCategory] = useState('Passive');
+    const [description, setDescription] = useState('');
+    const [tags, setTags] = useState('');
+    const [specs, setSpecs] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }]);
+    const [quantity, setQuantity] = useState(1);
+    const [locationId, setLocationId] = useState<string>(locations[0]?.id || '');
+
+    const handleSpecChange = (index: number, field: 'key' | 'value', value: string) => {
+        const newSpecs = [...specs];
+        newSpecs[index][field] = value;
+        setSpecs(newSpecs);
+    };
+
+    const addSpecField = () => {
+        setSpecs([...specs, { key: '', value: '' }]);
+    };
+    
+    const removeSpecField = (index: number) => {
+        setSpecs(specs.filter((_, i) => i !== index));
+    };
+
+    const resetForm = () => {
+        setName('');
+        setCategory('Passive');
+        setDescription('');
+        setTags('');
+        setSpecs([{ key: '', value: '' }]);
+        setQuantity(1);
+        setLocationId(locations[0]?.id || '');
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!name || !category || !locationId) {
+            alert('Please fill out all required fields.');
+            return;
+        }
+
+        const newComponent: Component = {
+            id: `comp-${Date.now()}`,
+            name,
+            category,
+            description,
+            tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
+            specs: specs.reduce((acc, spec) => {
+                if (spec.key) acc[spec.key] = spec.value;
+                return acc;
+            }, {} as Record<string, string>),
+        };
+        
+        addComponent(newComponent);
+        addInventoryItem({
+            componentId: newComponent.id,
+            quantity: Number(quantity),
+            locationId,
+        });
+
+        resetForm();
+        onClose();
+    };
+
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Manually Add Component">
+            <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+                {/* Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label htmlFor="comp-name" className="label-style">Component Name</label>
+                        <input id="comp-name" type="text" value={name} onChange={e => setName(e.target.value)} className="input-style py-2 px-3" placeholder="e.g., NE555 Timer IC" required />
+                    </div>
+                    <div>
+                        <label htmlFor="comp-cat" className="label-style">Category</label>
+                         <select id="comp-cat" value={category} onChange={e => setCategory(e.target.value)} className="input-style py-2 px-3">
+                            <option>Passive</option>
+                            <option>IC</option>
+                            <option>MCU</option>
+                            <option>Sensor</option>
+                            <option>Module</option>
+                            <option>Connector</option>
+                            <option>Mechanical</option>
+                        </select>
+                    </div>
+                </div>
+                 <div>
+                    <label htmlFor="comp-desc" className="label-style">Description</label>
+                    <textarea id="comp-desc" value={description} onChange={e => setDescription(e.target.value)} className="input-style py-2 px-3" rows={2} placeholder="e.g., A versatile precision timing device"></textarea>
+                </div>
+                <div>
+                    <label htmlFor="comp-tags" className="label-style">Tags (comma-separated)</label>
+                    <input id="comp-tags" type="text" value={tags} onChange={e => setTags(e.target.value)} className="input-style py-2 px-3" placeholder="e.g., timer, oscillator, pulse" />
+                </div>
+                
+                {/* Specifications */}
+                <div>
+                    <h4 className="label-style mb-2">Specifications</h4>
+                    <div className="space-y-2">
+                    {specs.map((spec, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                            <input type="text" value={spec.key} onChange={e => handleSpecChange(index, 'key', e.target.value)} className="input-style py-2 px-3" placeholder="Key (e.g., Voltage)" />
+                            <input type="text" value={spec.value} onChange={e => handleSpecChange(index, 'value', e.target.value)} className="input-style py-2 px-3" placeholder="Value (e.g., 5-15V)" />
+                            <button type="button" onClick={() => removeSpecField(index)} className="p-2 text-gray-400 hover:text-red-500">
+                                <TrashIcon />
+                            </button>
+                        </div>
+                    ))}
+                    </div>
+                    <Button type="button" onClick={addSpecField} className="mt-2 !py-1 !px-3 !text-sm">Add Specification</Button>
+                </div>
+
+                {/* Initial Inventory */}
+                <div className="border-t border-gray-700 pt-4">
+                     <h4 className="label-style mb-2">Initial Stock</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                             <label htmlFor="comp-qty" className="label-style">Quantity</label>
+                             <input id="comp-qty" type="number" min="1" value={quantity} onChange={e => setQuantity(Number(e.target.value))} className="input-style py-2 px-3" required />
+                        </div>
+                        <div>
+                             <label htmlFor="comp-loc" className="label-style">Location</label>
+                             <select id="comp-loc" value={locationId} onChange={e => setLocationId(e.target.value)} className="input-style py-2 px-3" required>
+                                {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
+                             </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex justify-end gap-4 pt-4">
+                    <SecondaryButton type="button" onClick={onClose}>Cancel</SecondaryButton>
+                    <Button type="submit">Add Component</Button>
+                </div>
+            </form>
         </Modal>
     );
 };
