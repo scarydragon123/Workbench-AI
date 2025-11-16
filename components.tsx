@@ -153,13 +153,24 @@ export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ comp
 
                 <div>
                     <h4 className="font-semibold text-gray-200 mb-2">Specifications:</h4>
-                    <ul className="list-disc list-inside text-gray-400 text-sm space-y-1 bg-gray-900/50 p-3 rounded-md">
-                        {Object.entries(component.specs).map(([key, value]) => <li key={key}><strong>{key}:</strong> {value}</li>)}
-                    </ul>
+                    <div className="bg-gray-900/50 rounded-md border border-gray-700">
+                        {Object.keys(component.specs).length > 0 ? (
+                            <ul className="divide-y divide-gray-700">
+                                {Object.entries(component.specs).map(([key, value]) => (
+                                    <li key={key} className="px-4 py-2 flex justify-between items-center text-sm break-words">
+                                        <span className="text-gray-400 font-medium mr-2">{key}</span>
+                                        <span className="text-gray-100 text-right">{value}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="px-4 py-3 text-sm text-gray-500">No specifications available.</p>
+                        )}
+                    </div>
                 </div>
 
                 <div>
-                    <h4 className="font-semibold text-gray-200 mb-2">Inventory Details:</h4>
+                    <h4 className="font-semibold text-gray-200 mb-2 mt-4">Inventory Details:</h4>
                     <div className="space-y-2">
                         {inventoryForComponent.map(item => {
                             const location = findLocationById(item.locationId);
