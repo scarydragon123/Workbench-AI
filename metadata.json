@@ -1,0 +1,7 @@
+{
+  "name": "Copy of Workshop AI",
+  "description": "A personal assistant for your electronics workshop. It recognizes components, tracks inventory, and suggests projects based on the parts you have.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
