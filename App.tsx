@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useInventory } from './context';
 import { Component, View, ProjectSuggestion, Location as LocationType } from './types';
 import { identifyComponent, getProjectIdeas } from './services';
-import { Button, SecondaryButton, ScanIcon, InventoryIcon, ProjectsIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal } from './components';
+import { Button, SecondaryButton, ScanIcon, InventoryIcon, ProjectsIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard } from './components';
 
 // --- VIEWS ---
 
@@ -245,7 +245,7 @@ const InventoryView: React.FC = () => {
   );
 };
 
-const ProjectsView: React.FC = () => {
+const ProjectIdeasView: React.FC = () => {
     const { getInventoryWithDetails } = useInventory();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -298,6 +298,35 @@ const ProjectsView: React.FC = () => {
         </div>
     );
 };
+
+const MyProjectsView: React.FC = () => {
+    const { projects } = useInventory();
+    const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
+
+    return (
+        <div className="p-4 md:p-6 space-y-6">
+            <div className="flex flex-wrap justify-between items-center gap-4">
+                <h1 className="text-3xl font-bold text-teal-400">My Projects</h1>
+                <Button onClick={() => setIsAddProjectModalOpen(true)}>Create New Project</Button>
+            </div>
+
+            {projects.length > 0 ? (
+                 <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {projects.map((proj) => <ProjectManagementCard key={proj.id} project={proj} />)}
+                </div>
+            ) : (
+                 <div className="text-center py-16 px-6 bg-gray-800 rounded-lg">
+                    <ClipboardListIcon />
+                    <h2 className="mt-2 text-xl font-semibold">No projects yet.</h2>
+                    <p className="mt-1 text-gray-400">Click the button to create your first project and track its components.</p>
+                </div>
+            )}
+            
+            <AddProjectModal isOpen={isAddProjectModalOpen} onClose={() => setIsAddProjectModalOpen(false)} />
+        </div>
+    );
+};
+
 
 const LocationsView: React.FC = () => {
     const { locations, addLocation } = useInventory();
@@ -357,8 +386,10 @@ const App: React.FC = () => {
         return <IdentifyView />;
       case View.INVENTORY:
         return <InventoryView />;
-      case View.PROJECTS:
-        return <ProjectsView />;
+      case View.IDEAS:
+        return <ProjectIdeasView />;
+      case View.MY_PROJECTS:
+        return <MyProjectsView />;
       case View.LOCATIONS:
         return <LocationsView />;
       default:
@@ -396,7 +427,8 @@ interface NavProps {
 const navItems = [
   { view: View.IDENTIFY, icon: <ScanIcon />, label: 'Identify' },
   { view: View.INVENTORY, icon: <InventoryIcon />, label: 'Inventory' },
-  { view: View.PROJECTS, icon: <ProjectsIcon />, label: 'Projects' },
+  { view: View.IDEAS, icon: <ProjectsIcon />, label: 'Ideas' },
+  { view: View.MY_PROJECTS, icon: <ClipboardListIcon />, label: 'My Projects' },
   { view: View.LOCATIONS, icon: <LocationIcon />, label: 'Locations' },
 ];
 

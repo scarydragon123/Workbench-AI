@@ -34,9 +34,23 @@ export interface ProjectSuggestion {
   }[];
 }
 
+export interface ProjectComponent {
+    componentId: string;
+    quantity: number;
+}
+
+export interface Project {
+    id: string;
+    name: string;
+    description: string;
+    components: ProjectComponent[];
+}
+
+
 export enum View {
   IDENTIFY,
   INVENTORY,
-  PROJECTS,
+  IDEAS,
+  MY_PROJECTS,
   LOCATIONS,
 }

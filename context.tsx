@@ -1,18 +1,21 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo, ReactNode } from 'react';
-import { InventoryItem, Component, Location } from './types';
+import { InventoryItem, Component, Location, Project } from './types';
 
 interface InventoryContextType {
   components: Component[];
   inventory: InventoryItem[];
   locations: Location[];
+  projects: Project[];
   addComponent: (component: Component) => void;
   deleteComponent: (componentId: string) => void;
   addInventoryItem: (item: Omit<InventoryItem, 'id'>) => void;
   updateInventoryItem: (componentId: string, locationId: string, quantity: number) => void;
   addLocation: (location: Omit<Location, 'id'>) => void;
+  addProject: (project: Omit<Project, 'id'>) => void;
   findComponentById: (id: string) => Component | undefined;
   findLocationById: (id: string) => Location | undefined;
   getInventoryWithDetails: () => (InventoryItem & { component: Component; location: Location })[];
+  getProjectsForComponent: (componentId: string) => Project[];
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
@@ -51,6 +54,17 @@ const initialInventory: InventoryItem[] = [
     { componentId: 'comp-2', locationId: 'loc-1', quantity: 5 },
 ];
 
+const initialProjects: Project[] = [
+    {
+        id: 'proj-1',
+        name: 'IoT Weather Station',
+        description: 'A simple weather station that reports temperature and humidity over WiFi.',
+        components: [
+            { componentId: 'comp-2', quantity: 1 }
+        ]
+    }
+];
+
 
 export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [components, setComponents] = useState<Component[]>(() => {
@@ -68,6 +82,11 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : initialLocations;
   });
 
+  const [projects, setProjects] = useState<Project[]>(() => {
+    const saved = localStorage.getItem('ws_projects');
+    return saved ? JSON.parse(saved) : initialProjects;
+  });
+
   useEffect(() => {
     localStorage.setItem('ws_components', JSON.stringify(components));
   }, [components]);
@@ -79,6 +98,10 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('ws_locations', JSON.stringify(locations));
   }, [locations]);
+  
+  useEffect(() => {
+    localStorage.setItem('ws_projects', JSON.stringify(projects));
+  }, [projects]);
 
   const addComponent = useCallback((component: Component) => {
     setComponents(prev => {
@@ -121,6 +144,11 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     const newLocation = { ...location, id: `loc-${Date.now()}` };
     setLocations(prev => [...prev, newLocation]);
   }, []);
+
+  const addProject = useCallback((project: Omit<Project, 'id'>) => {
+    const newProject = { ...project, id: `proj-${Date.now()}`};
+    setProjects(prev => [...prev, newProject]);
+  }, []);
   
   const findComponentById = useCallback((id: string) => components.find(c => c.id === id), [components]);
   const findLocationById = useCallback((id: string) => locations.find(l => l.id === id), [locations]);
@@ -137,31 +165,41 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
         })
         .filter((item): item is InventoryItem & { component: Component; location: Location } => item !== null);
   }, [inventory, findComponentById, findLocationById]);
+
+  const getProjectsForComponent = useCallback((componentId: string) => {
+      return projects.filter(p => p.components.some(c => c.componentId === componentId));
+  }, [projects]);
   
   const value = useMemo(() => ({
     components, 
     inventory, 
     locations, 
+    projects,
     addComponent, 
     deleteComponent, 
     addInventoryItem, 
     updateInventoryItem, 
-    addLocation, 
+    addLocation,
+    addProject,
     findComponentById, 
     findLocationById, 
-    getInventoryWithDetails
+    getInventoryWithDetails,
+    getProjectsForComponent,
   }), [
     components, 
     inventory, 
     locations, 
+    projects,
     addComponent, 
     deleteComponent, 
     addInventoryItem, 
     updateInventoryItem, 
     addLocation, 
+    addProject,
     findComponentById, 
     findLocationById, 
-    getInventoryWithDetails
+    getInventoryWithDetails,
+    getProjectsForComponent,
   ]);
 
 
