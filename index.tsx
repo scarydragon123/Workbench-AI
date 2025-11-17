@@ -1,10 +1,9 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.tsx';
-import { InventoryProvider } from './context.tsx';
-import { AuthProvider } from './auth.tsx';
-import { ThemeProvider } from './ThemeContext.tsx';
+import App from './App';
+import { InventoryProvider } from './context';
+import { AuthProvider } from './auth';
+import { ThemeProvider } from './theme';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -14,12 +13,12 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <AuthProvider>
-      <ThemeProvider>
+    <ThemeProvider>
+      <AuthProvider>
         <InventoryProvider>
           <App />
         </InventoryProvider>
-      </ThemeProvider>
-    </AuthProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );

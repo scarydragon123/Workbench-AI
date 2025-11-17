@@ -1,9 +1,9 @@
-
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo, ReactNode } from 'react';
-import { InventoryItem, Component, Location as LocationType, Project } from './types.ts';
-import { useAuth } from './auth.tsx';
-import { db } from './firebase.ts';
-import { collection, doc, getDocs, writeBatch, setDoc, deleteDoc } from 'firebase/firestore';
+import { InventoryItem, Component, Location as LocationType, Project } from './types';
+import { useAuth } from './auth';
+import { db } from './firebase';
+// FIX: Use Firebase v8 compatible API. The modular imports are removed as they are not available in the environment.
+// import { collection, doc, getDocs, writeBatch, setDoc, deleteDoc } from 'firebase/firestore';
 
 interface InventoryContextType {
   components: Component[];
@@ -38,16 +38,18 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
       if (currentUser) {
         setLoading(true);
         try {
-          const componentsRef = collection(db, 'users', currentUser.uid, 'components');
-          const inventoryRef = collection(db, 'users', currentUser.uid, 'inventory');
-          const locationsRef = collection(db, 'users', currentUser.uid, 'locations');
-          const projectsRef = collection(db, 'users', currentUser.uid, 'projects');
+          // FIX: Use Firebase v8 compatible API for collection references.
+          const componentsRef = db.collection('users').doc(currentUser.uid).collection('components');
+          const inventoryRef = db.collection('users').doc(currentUser.uid).collection('inventory');
+          const locationsRef = db.collection('users').doc(currentUser.uid).collection('locations');
+          const projectsRef = db.collection('users').doc(currentUser.uid).collection('projects');
 
           const [componentsSnap, inventorySnap, locationsSnap, projectsSnap] = await Promise.all([
-            getDocs(componentsRef),
-            getDocs(inventoryRef),
-            getDocs(locationsRef),
-            getDocs(projectsRef)
+            // FIX: Use Firebase v8 compatible API for getting documents.
+            componentsRef.get(),
+            inventoryRef.get(),
+            locationsRef.get(),
+            projectsRef.get()
           ]);
 
           setComponents(componentsSnap.docs.map(doc => doc.data() as Component));
@@ -74,8 +76,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   const addComponent = useCallback(async (component: Component) => {
     if (!currentUser) return;
     try {
-      const componentRef = doc(db, 'users', currentUser.uid, 'components', component.id);
-      await setDoc(componentRef, component);
+      // FIX: Use Firebase v8 compatible API for document references and setting data.
+      const componentRef = db.collection('users').doc(currentUser.uid).collection('components').doc(component.id);
+      await componentRef.set(component);
       setComponents(prev => [...prev, component]);
     } catch (error) {
       console.error("Error adding component: ", error);
@@ -85,14 +88,16 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   const deleteComponent = useCallback(async (componentId: string) => {
     if (!currentUser) return;
     try {
-      const batch = writeBatch(db);
-      const componentRef = doc(db, 'users', currentUser.uid, 'components', componentId);
+      // FIX: Use Firebase v8 compatible API for write batches.
+      const batch = db.batch();
+      const componentRef = db.collection('users').doc(currentUser.uid).collection('components').doc(componentId);
       batch.delete(componentRef);
 
       const inventoryToDelete = inventory.filter(i => i.componentId === componentId);
       inventoryToDelete.forEach(item => {
         const inventoryId = `${item.componentId}-${item.locationId}`;
-        const inventoryRef = doc(db, 'users', currentUser.uid, 'inventory', inventoryId);
+        // FIX: Use Firebase v8 compatible API for document references.
+        const inventoryRef = db.collection('users').doc(currentUser.uid).collection('inventory').doc(inventoryId);
         batch.delete(inventoryRef);
       });
 
@@ -109,13 +114,15 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (!currentUser) return;
     try {
         const inventoryId = `${item.componentId}-${item.locationId}`;
-        const inventoryRef = doc(db, 'users', currentUser.uid, 'inventory', inventoryId);
+        // FIX: Use Firebase v8 compatible API for document references.
+        const inventoryRef = db.collection('users').doc(currentUser.uid).collection('inventory').doc(inventoryId);
         
         const existing = inventory.find(i => i.componentId === item.componentId && i.locationId === item.locationId);
         const newQuantity = existing ? existing.quantity + item.quantity : item.quantity;
         const newItemData = { ...item, quantity: newQuantity };
 
-        await setDoc(inventoryRef, newItemData);
+        // FIX: Use Firebase v8 compatible API for setting data.
+        await inventoryRef.set(newItemData);
         
         if (existing) {
             setInventory(prev => prev.map(i => i.componentId === item.componentId && i.locationId === item.locationId ? newItemData : i));
@@ -131,14 +138,17 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (!currentUser) return;
     try {
         const inventoryId = `${componentId}-${locationId}`;
-        const inventoryRef = doc(db, 'users', currentUser.uid, 'inventory', inventoryId);
+        // FIX: Use Firebase v8 compatible API for document references.
+        const inventoryRef = db.collection('users').doc(currentUser.uid).collection('inventory').doc(inventoryId);
         
         if (quantity <= 0) {
-            await deleteDoc(inventoryRef);
+            // FIX: Use Firebase v8 compatible API for deleting documents.
+            await inventoryRef.delete();
             setInventory(prev => prev.filter(item => !(item.componentId === componentId && item.locationId === locationId)));
         } else {
             const updatedItem = { componentId, locationId, quantity };
-            await setDoc(inventoryRef, updatedItem, { merge: true });
+            // FIX: Use Firebase v8 compatible API for setting data.
+            await inventoryRef.set(updatedItem, { merge: true });
             setInventory(prev => prev.map(item =>
                 item.componentId === componentId && item.locationId === locationId
                     ? { ...item, quantity }
@@ -154,8 +164,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (!currentUser) return;
     try {
         const newLocation = { ...location, id: `loc-${Date.now()}` };
-        const locationRef = doc(db, 'users', currentUser.uid, 'locations', newLocation.id);
-        await setDoc(locationRef, newLocation);
+        // FIX: Use Firebase v8 compatible API for document references and setting data.
+        const locationRef = db.collection('users').doc(currentUser.uid).collection('locations').doc(newLocation.id);
+        await locationRef.set(newLocation);
         setLocations(prev => [...prev, newLocation]);
     } catch (error) {
         console.error("Error adding location: ", error);
@@ -166,8 +177,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     if (!currentUser) return;
     try {
         const newProject = { ...project, id: `proj-${Date.now()}`};
-        const projectRef = doc(db, 'users', currentUser.uid, 'projects', newProject.id);
-        await setDoc(projectRef, newProject);
+        // FIX: Use Firebase v8 compatible API for document references and setting data.
+        const projectRef = db.collection('users').doc(currentUser.uid).collection('projects').doc(newProject.id);
+        await projectRef.set(newProject);
         setProjects(prev => [...prev, newProject]);
     } catch (error) {
         console.error("Error adding project: ", error);

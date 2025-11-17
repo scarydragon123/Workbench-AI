@@ -1,21 +1,24 @@
-
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
-import { auth } from './firebase.ts';
-import { User, onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebase';
+// FIX: Use Firebase v8 compatible API. `User` is now a type on the `firebase` namespace, and `onAuthStateChanged` is a method on the `auth` object.
+import firebase from 'firebase/app';
 
 interface AuthContextType {
-  currentUser: User | null;
+  // FIX: Use the User type from the firebase namespace.
+  currentUser: firebase.User | null;
   loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // FIX: Use the User type from the firebase namespace.
+  const [currentUser, setCurrentUser] = useState<firebase.User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
+    // FIX: Use the onAuthStateChanged method from the auth object.
+    const unsubscribe = auth.onAuthStateChanged(user => {
       setCurrentUser(user);
       setLoading(false);
     });

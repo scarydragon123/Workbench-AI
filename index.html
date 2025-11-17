@@ -1,31 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-g" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Workshop AI</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              accent: {
-                300: 'rgb(var(--color-accent-300) / <alpha-value>)',
-                400: 'rgb(var(--color-accent-400) / <alpha-value>)',
-                500: 'rgb(var(--color-accent-500) / <alpha-value>)',
-                600: 'rgb(var(--color-accent-600) / <alpha-value>)',
-                700: 'rgb(var(--color-accent-700) / <alpha-value>)',
-              }
-            }
-          }
-        }
-      }
-    </script>
-    <!-- Add Babel to transpile JSX/TSX in the browser -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script type="importmap">
+  <script type="importmap">
 {
   "imports": {
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
@@ -39,10 +19,9 @@
   }
 }
 </script>
-  </head>
-  <body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+</head>
+  <body>
     <div id="root"></div>
-    <!-- Use type="text/babel" to let Babel transpile the module -->
-    <script type="text/babel" data-type="module" data-presets="react,typescript" src="./index.tsx"></script>
+    <script type="module" src="./index.tsx"></script>
   </body>
 </html>
