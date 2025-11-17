@@ -125,10 +125,14 @@ export const ComponentCard: React.FC<ComponentCardProps> = ({ component, quantit
 
 interface ProjectCardProps {
     project: ProjectSuggestion;
+    onClick: () => void;
 }
 
-export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => (
-    <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 flex flex-col h-full">
+export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => (
+    <div 
+        className="bg-gray-800 p-4 rounded-lg border border-gray-700 flex flex-col h-full hover:border-teal-500 cursor-pointer transition-colors"
+        onClick={onClick}
+    >
         <h3 className="font-bold text-lg text-teal-400">{project.name}</h3>
         <div className="flex items-center gap-2 my-1">
             <span className="text-xs font-semibold text-gray-300">Difficulty:</span>
@@ -308,6 +312,82 @@ export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ isOp
     );
 };
 
+interface ProjectDetailModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  project: ProjectSuggestion | null;
+}
+
+export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ isOpen, onClose, project }) => {
+    const { components, addProject, projects } = useInventory();
+
+    if (!project) return null;
+    
+    const projectExists = projects.some(p => p.name === project.name);
+
+    const handleCreateProject = () => {
+        const projectComponents: ProjectComponent[] = project.components
+            .map(reqComponent => {
+                const found = components.find(c => c.name.toLowerCase() === reqComponent.name.toLowerCase());
+                if (found) {
+                    return { componentId: found.id, quantity: reqComponent.quantity };
+                }
+                return null;
+            })
+            .filter((c): c is ProjectComponent => c !== null);
+
+        addProject({
+            name: project.name,
+            description: project.description,
+            components: projectComponents,
+        });
+
+        onClose();
+    };
+
+    return (
+        <Modal isOpen={isOpen} onClose={onClose} title="Project Details" size="lg">
+            <div className="space-y-6">
+                <div>
+                    <h3 className="text-2xl font-bold text-gray-100">{project.name}</h3>
+                    <div className="flex items-center gap-2 my-2">
+                        <span className="text-sm font-semibold text-gray-300">Difficulty:</span>
+                        <div className="flex gap-1">
+                            {[...Array(5)].map((_, i) => (
+                                <div key={i} className={`w-4 h-4 rounded-full ${i < project.difficulty ? 'bg-teal-500' : 'bg-gray-600'}`}></div>
+                            ))}
+                        </div>
+                    </div>
+                    <p className="text-gray-300">{project.description}</p>
+                </div>
+                
+                <div>
+                    <h4 className="font-semibold text-gray-200 mb-2">Required Components</h4>
+                    <ul className="space-y-2 text-sm max-h-60 overflow-y-auto pr-2">
+                        {project.components.map((c, i) => (
+                            <li key={i} className="flex justify-between items-center bg-gray-700/50 p-2 rounded-md">
+                                <span className={`truncate ${c.available ? 'text-gray-300' : 'text-red-400'}`}>
+                                   {c.quantity}x {c.name}
+                                </span>
+                                {c.available ? 
+                                    <span className="text-xs bg-green-900/50 text-green-300 px-2 py-0.5 rounded-full">Available</span> : 
+                                    <span className="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded-full">Missing</span>}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                
+                <div className="pt-4 border-t border-gray-700 flex justify-end gap-4">
+                    <SecondaryButton onClick={onClose}>Close</SecondaryButton>
+                    <Button onClick={handleCreateProject} disabled={projectExists} title={projectExists ? 'This project is already in your list' : ''}>
+                        {projectExists ? 'Project Exists' : 'Create Project'}
+                    </Button>
+                </div>
+            </div>
+        </Modal>
+    );
+};
+
 interface AddComponentModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -317,6 +397,8 @@ export const AddComponentModal: React.FC<AddComponentModalProps> = ({ isOpen, on
     const { addComponent, addInventoryItem, locations } = useInventory();
     
     const [name, setName] = useState('');
+    // FIX: Add state for simpleName.
+    const [simpleName, setSimpleName] = useState('');
     const [category, setCategory] = useState('');
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState('');
@@ -336,6 +418,8 @@ export const AddComponentModal: React.FC<AddComponentModalProps> = ({ isOpen, on
         const newComponent: Component = {
             id: newId,
             name,
+            // FIX: Add simpleName to the new component object.
+            simpleName,
             category,
             description,
             tags: tags.split(',').map(t => t.trim()).filter(Boolean),
@@ -351,6 +435,8 @@ export const AddComponentModal: React.FC<AddComponentModalProps> = ({ isOpen, on
         
         // Reset form
         setName('');
+        // FIX: Reset simpleName state.
+        setSimpleName('');
         setCategory('');
         setDescription('');
         setTags('');
@@ -366,6 +452,11 @@ export const AddComponentModal: React.FC<AddComponentModalProps> = ({ isOpen, on
                 <div>
                     <label className="label-style" htmlFor="comp-name">Component Name</label>
                     <input id="comp-name" type="text" value={name} onChange={e => setName(e.target.value)} className="input-style" placeholder="e.g., ATmega328P" required />
+                </div>
+                {/* FIX: Add input field for simpleName. */}
+                <div>
+                    <label className="label-style" htmlFor="comp-simple-name">Simple Name</label>
+                    <input id="comp-simple-name" type="text" value={simpleName} onChange={e => setSimpleName(e.target.value)} className="input-style" placeholder="e.g., 8-bit Microcontroller" required />
                 </div>
                 <div>
                     <label className="label-style" htmlFor="comp-cat">Category</label>

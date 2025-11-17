@@ -2,6 +2,7 @@
 export interface Component {
   id: string;
   name: string;
+  simpleName: string;
   category: string;
   specs: Record<string, string>;
   tags: string[];
@@ -40,7 +41,7 @@ export interface ProjectComponent {
 }
 
 export interface Project {
-    id: string;
+    id:string;
     name: string;
     description: string;
     components: ProjectComponent[];

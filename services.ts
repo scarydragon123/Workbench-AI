@@ -26,41 +26,61 @@ function fileToGenerativePart(file: File) {
 
 export const identifyComponent = async (imageFile: File | null, manualInput: string): Promise<Omit<Component, 'id' | 'imageUrl'>> => {
     const model = 'gemini-2.5-flash';
-    const parts = [];
 
-    let prompt = `You are Workshop AI, an expert in electronic components. 
-    Based on the provided image and/or text, identify the component. 
-    Provide a detailed JSON response. The main name should be the specific part number if available (e.g., 'ESP32-WROOM-32'), not a generic name.
-    The category should be one of: 'MCU', 'Sensor', 'Passive', 'IC', 'Module', 'Connector', 'Mechanical'.
-    Include a short 'description' of what the component is and does.
-    Provide a list of 'typicalUses' (e.g., 'pull-up resistor', 'audio filtering').
-    Provide a list of 'recommendedCircuits' (e.g., 'Voltage Divider with a 10k resistor').
-    Provide common use-case tags.
-    If you are unsure, make a best guess and indicate low confidence in the description.
-    Manual input: "${manualInput}"`;
+    const userPrompt = `You are Workshop AI, an expert at identifying electronic components with high accuracy.
+
+    **Your Task:**
+    Analyze the provided image and/or text to identify the electronic component.
+
+    **Critical Identification Protocol:**
+    1.  **Examine Markings First:** Your HIGHEST PRIORITY is to meticulously read any text, numbers, and logos on the component itself. These markings are the key to the correct part number.
+    2.  **Verify with Visuals:** Cross-reference the markings with the component's physical characteristics (package type, pin count, color, form factor).
+    3.  **Synthesize Information:** Combine the markings and visual data to determine the most accurate part number and details.
+
+    **Output Format:**
+    Provide a detailed JSON response. The 'name' field MUST be the specific part number if visible (e.g., 'INMP441', 'ESP32-WROOM-32'), not a generic name.
+
+    - simpleName: A common, easy-to-understand name for this component (e.g., 'MEMS Microphone Module').
+    - category: One of: 'MCU', 'Sensor', 'Passive', 'IC', 'Module', 'Connector', 'Mechanical', 'Power', 'Display'.
+    - specs: An array of objects, each with 'specName' and 'specValue'.
+    - description: A short description of what the component is and does.
+    - typicalUses: A list explaining what the component is used for.
+    - recommendedCircuits: A list of example circuits.
+    - tags: Common use-case tags.
+
+    If you are uncertain, state your low confidence in the description.
+
+    **User-provided input (use as a hint):** "${manualInput}"`;
     
+    let contents;
     if (imageFile) {
         const imagePart = await fileToGenerativePart(imageFile);
-        parts.push(imagePart);
+        contents = { parts: [imagePart, { text: userPrompt }] };
+    } else {
+        contents = userPrompt;
     }
-    
-    parts.push({ text: prompt });
 
     const response = await ai.models.generateContent({
       model,
-      contents: { parts },
+      contents,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
             name: { type: Type.STRING },
+            simpleName: { type: Type.STRING },
             category: { type: Type.STRING },
             description: { type: Type.STRING },
             specs: { 
-                type: Type.OBJECT,
-                properties: {},
-                additionalProperties: { type: Type.STRING }
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        specName: { type: Type.STRING },
+                        specValue: { type: Type.STRING }
+                    }
+                }
             },
             tags: {
               type: Type.ARRAY,
@@ -81,18 +101,62 @@ export const identifyComponent = async (imageFile: File | null, manualInput: str
 
     try {
         const text = response.text.trim();
-        return JSON.parse(text);
+        // The response will have specs as an array, so we need to process it.
+        const parsedResponse = JSON.parse(text) as { specs: { specName: string; specValue: string }[] } & Omit<Component, 'id' | 'imageUrl' | 'specs'>;
+        
+        const specsObject = (parsedResponse.specs || []).reduce((acc, spec) => {
+            if (spec.specName && spec.specValue) {
+               acc[spec.specName] = spec.specValue;
+            }
+            return acc;
+        }, {} as Record<string, string>);
+
+        // Return the component with the specs object correctly formatted.
+        return {
+            ...parsedResponse,
+            specs: specsObject,
+        };
     } catch (e) {
-        console.error("Failed to parse Gemini response:", response.text);
+        console.error("Failed to parse Gemini response:", response.text, e);
         throw new Error("Could not identify the component from the response.");
     }
+};
+
+export const askAboutComponent = async (component: Component, question: string): Promise<string> => {
+    const model = 'gemini-2.5-flash';
+    const componentContext = `
+        Component Name: ${component.name}
+        Simple Name: ${component.simpleName}
+        Category: ${component.category}
+        Description: ${component.description}
+        Specifications: ${JSON.stringify(component.specs)}
+        Typical Uses: ${component.typicalUses?.join(', ')}
+    `;
+
+    const userPrompt = `You are Workshop AI, an expert in electronic components.
+    A user has identified the following component:
+    --- COMPONENT CONTEXT ---
+    ${componentContext}
+    --- END CONTEXT ---
+
+    Now, answer the user's following question about this specific component. Be helpful and concise.
+
+    Question: "${question}"
+    `;
+
+    const response = await ai.models.generateContent({
+        model,
+        contents: userPrompt,
+    });
+
+    return response.text;
 };
 
 export const getProjectIdeas = async (inventory: (InventoryItem & { component: Component; location: LocationType })[]) => {
     const model = 'gemini-2.5-pro';
     const availableComponents = inventory.map(item => ({ name: item.component.name, quantity: item.quantity }));
     
-    const prompt = `You are Workshop AI, a creative assistant for electronics hobbyists. 
+    const userPrompt = `You are Workshop AI, a creative assistant for electronics hobbyists.
     Given the following list of available components and their quantities, suggest 3 project ideas.
     Your suggestions should be practical and buildable with the given parts, but you can include 1 or 2 minor, common components that are likely to be available (like wires, breadboard, basic resistors) even if not listed.
     For each project, provide a name, a short description, a difficulty rating from 1 (beginner) to 5 (expert), and a list of required components.
@@ -103,7 +167,7 @@ export const getProjectIdeas = async (inventory: (InventoryItem & { component: C
 
     const response = await ai.models.generateContent({
         model,
-        contents: prompt,
+        contents: userPrompt,
         config: {
             responseMimeType: "application/json",
             responseSchema: {

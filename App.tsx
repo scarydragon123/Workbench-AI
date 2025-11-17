@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
+
+import React, { useState, useCallback, useEffect } from 'react';
 import { useInventory } from './context';
 import { Component, View, ProjectSuggestion, Location as LocationType } from './types';
-import { identifyComponent, getProjectIdeas } from './services';
-import { Button, SecondaryButton, ScanIcon, InventoryIcon, ProjectsIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard } from './components';
+import { identifyComponent, getProjectIdeas, askAboutComponent } from './services';
+import { Button, SecondaryButton, ScanIcon, InventoryIcon, ProjectsIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard, ProjectDetailModal } from './components';
 
 // --- VIEWS ---
 
@@ -14,10 +15,29 @@ const IdentifyView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Component | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model'; text: string }[]>([]);
+  const [userQuestion, setUserQuestion] = useState('');
+  const [isAnswering, setIsAnswering] = useState(false);
+  const [identificationHistory, setIdentificationHistory] = useState<Component[]>([]);
 
   const { addComponent, addInventoryItem, locations } = useInventory();
   const [quantity, setQuantity] = useState(1);
   const [selectedLocation, setSelectedLocation] = useState<string>(locations[0]?.id || '');
+
+  useEffect(() => {
+    try {
+      const savedHistory = localStorage.getItem('ws_identification_history');
+      if (savedHistory) {
+        setIdentificationHistory(JSON.parse(savedHistory));
+      }
+    } catch (e) {
+      console.error("Failed to load identification history:", e);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('ws_identification_history', JSON.stringify(identificationHistory));
+  }, [identificationHistory]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -36,6 +56,7 @@ const IdentifyView: React.FC = () => {
     setIsLoading(true);
     setError(null);
     setResult(null);
+    setChatHistory([]);
 
     try {
       const componentData = await identifyComponent(imageFile, manualInput);
@@ -45,12 +66,46 @@ const IdentifyView: React.FC = () => {
         imageUrl: preview || undefined
       };
       setResult(newComponent);
+      setIdentificationHistory(prev => {
+        const newHistory = [newComponent, ...prev.filter(c => c.id !== newComponent.id)];
+        return newHistory.slice(0, 5); // Keep the 5 most recent
+      });
+      setChatHistory([{ role: 'model', text: `I've identified this as a ${newComponent.name}. What would you like to know about it?` }]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
       setIsLoading(false);
     }
   };
+  
+  const handleAskQuestion = async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!userQuestion.trim() || !result) return;
+      
+      const question = userQuestion.trim();
+      setChatHistory(prev => [...prev, { role: 'user', text: question }]);
+      setUserQuestion('');
+      setIsAnswering(true);
+
+      try {
+          const answer = await askAboutComponent(result, question);
+          setChatHistory(prev => [...prev, { role: 'model', text: answer }]);
+      } catch (err) {
+          setChatHistory(prev => [...prev, { role: 'model', text: "Sorry, I ran into an error trying to answer that. Please try again." }]);
+      } finally {
+          setIsAnswering(false);
+      }
+  };
+
+  const reset = () => {
+    setImageFile(null);
+    setPreview(null);
+    setManualInput('');
+    setError(null);
+    setResult(null);
+    setIsLoading(false);
+    setChatHistory([]);
+  }
 
   const handleAddToInventory = () => {
     if (result) {
@@ -61,21 +116,14 @@ const IdentifyView: React.FC = () => {
         locationId: selectedLocation,
       });
       setIsModalOpen(false);
-      setResult(null);
-      setPreview(null);
-      setImageFile(null);
-      setManualInput('');
+      reset();
     }
   };
 
-  const reset = () => {
-    setImageFile(null);
-    setPreview(null);
-    setManualInput('');
+  const handleHistoryClick = (component: Component) => {
+    setResult(component);
     setError(null);
-    setResult(null);
-    setIsLoading(false);
-  }
+  };
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -117,6 +165,33 @@ const IdentifyView: React.FC = () => {
         </div>
       </div>
       
+      {identificationHistory.length > 0 && !result && !isLoading && !error && (
+        <div className="bg-gray-800 p-6 rounded-lg shadow-lg mt-6 animate-fade-in">
+          <h2 className="text-xl font-bold text-gray-200 mb-4">Recently Identified</h2>
+          <div className="space-y-3">
+            {identificationHistory.map(component => (
+              <button 
+                key={component.id} 
+                onClick={() => handleHistoryClick(component)}
+                className="w-full flex items-center gap-4 p-3 bg-gray-900/50 rounded-lg text-left hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+              >
+                {component.imageUrl ? (
+                  <img src={component.imageUrl} alt={component.name} className="w-12 h-12 object-cover rounded-md bg-gray-700 flex-shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 bg-gray-700 rounded-md flex items-center justify-center flex-shrink-0">
+                      <ScanIcon />
+                  </div>
+                )}
+                <div className="overflow-hidden">
+                  <h3 className="font-bold text-gray-100 truncate">{component.name}</h3>
+                  <p className="text-sm text-gray-400 truncate">{component.simpleName}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {isLoading && <div className="text-center p-4"> <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400 mx-auto"></div><p className="mt-2">Workshop AI is thinking...</p></div>}
       {error && <div className="bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded-lg">{error}</div>}
 
@@ -124,20 +199,79 @@ const IdentifyView: React.FC = () => {
         <div className="bg-gray-800 p-6 rounded-lg shadow-lg animate-fade-in">
           <h2 className="text-2xl font-bold text-teal-400 mb-4">Identification Result</h2>
           <div className="flex flex-col md:flex-row gap-6">
-            {result.imageUrl && <img src={result.imageUrl} alt={result.name} className="w-full md:w-48 h-48 object-cover rounded-lg" />}
-            <div className="flex-1">
-              <h3 className="text-xl font-bold">{result.name}</h3>
-              <p className="text-md text-gray-400 mb-2">{result.category}</p>
-              <p className="text-gray-300 mb-4">{result.description}</p>
-              <h4 className="font-semibold text-gray-200">Specifications:</h4>
-              <ul className="list-disc list-inside text-gray-400 mb-4">
-                {Object.entries(result.specs).map(([key, value]) => <li key={key}><strong>{key}:</strong> {value}</li>)}
-              </ul>
+            {result.imageUrl && <img src={result.imageUrl} alt={result.name} className="w-full md:w-48 h-48 object-cover rounded-lg bg-gray-700" />}
+            <div className="flex-1 space-y-4">
+              <div>
+                <h3 className="text-xl font-bold">{result.name}</h3>
+                <p className="text-lg text-teal-300 -mt-1">{result.simpleName}</p>
+                <p className="text-md text-gray-400">{result.category}</p>
+              </div>
+              <p className="text-gray-300">{result.description}</p>
               <div className="flex flex-wrap gap-2">
                 {result.tags.map(tag => <span key={tag} className="bg-gray-700 text-teal-300 text-xs font-semibold px-2 py-1 rounded-full">{tag}</span>)}
               </div>
-              <Button className="mt-4" onClick={() => setIsModalOpen(true)}>Add to Inventory</Button>
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-700">
+            <div>
+              <h4 className="font-semibold text-gray-200 mb-2">Typical Applications</h4>
+              <ul className="list-disc list-inside text-gray-400 space-y-1">
+                  {(result.typicalUses || []).map((use, i) => <li key={i}>{use}</li>)}
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold text-gray-200 mb-2">Specifications</h4>
+              <div className="space-y-1 text-gray-400 max-h-40 overflow-y-auto">
+                  {Object.entries(result.specs).map(([key, value]) => (
+                      <div key={key} className="flex justify-between text-sm pr-2">
+                          <span className="font-semibold text-gray-300 mr-2">{key}:</span>
+                          <span className="text-right truncate">{value}</span>
+                      </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-gray-700">
+            <Button onClick={() => setIsModalOpen(true)}>Add to Inventory</Button>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-gray-700">
+            <h3 className="text-xl font-bold mb-4 text-gray-200">Ask About This Component</h3>
+            <div className="bg-gray-900 rounded-lg p-4 h-64 overflow-y-auto flex flex-col gap-4">
+              {chatHistory.map((msg, index) => (
+                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.role === 'user' ? 'bg-teal-700' : 'bg-gray-700'}`}>
+                    <p className="text-sm text-gray-100 whitespace-pre-wrap">{msg.text}</p>
+                  </div>
+                </div>
+              ))}
+              {isAnswering && (
+                <div className="flex justify-start">
+                  <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-700">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
+                      <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse [animation-delay:0.2s]"></div>
+                      <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse [animation-delay:0.4s]"></div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <form onSubmit={handleAskQuestion} className="mt-4 flex gap-2">
+              <input 
+                type="text"
+                value={userQuestion}
+                onChange={(e) => setUserQuestion(e.target.value)}
+                placeholder="e.g., How do I power this?"
+                className="input-style flex-1"
+                disabled={isAnswering}
+              />
+              <Button type="submit" disabled={isAnswering || !userQuestion.trim()}>
+                {isAnswering ? '...' : 'Send'}
+              </Button>
+            </form>
           </div>
         </div>
       )}
@@ -250,6 +384,7 @@ const ProjectIdeasView: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [projects, setProjects] = useState<ProjectSuggestion[]>([]);
+    const [selectedProject, setSelectedProject] = useState<ProjectSuggestion | null>(null);
 
     const handleGenerateProjects = async () => {
         setIsLoading(true);
@@ -284,7 +419,7 @@ const ProjectIdeasView: React.FC = () => {
             
             {projects.length > 0 && (
                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {projects.map((proj, index) => <ProjectCard key={index} project={proj} />)}
+                    {projects.map((proj, index) => <ProjectCard key={index} project={proj} onClick={() => setSelectedProject(proj)} />)}
                 </div>
             )}
 
@@ -295,6 +430,11 @@ const ProjectIdeasView: React.FC = () => {
                     <p className="mt-1 text-gray-400">Click the button to get project ideas based on your current inventory.</p>
                 </div>
             )}
+             <ProjectDetailModal 
+                isOpen={!!selectedProject} 
+                onClose={() => setSelectedProject(null)} 
+                project={selectedProject} 
+            />
         </div>
     );
 };
@@ -378,7 +518,7 @@ const LocationsView: React.FC = () => {
 // --- APP ---
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<View>(View.INVENTORY);
+  const [currentView, setCurrentView] = useState<View>(View.IDENTIFY);
 
   const renderView = () => {
     switch (currentView) {

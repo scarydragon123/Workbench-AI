@@ -30,6 +30,8 @@ const initialComponents: Component[] = [
     { 
         id: 'comp-1', 
         name: '10kΩ Resistor', 
+        // FIX: Add missing simpleName property.
+        simpleName: 'Resistor',
         category: 'Passive', 
         specs: { Resistance: '10kΩ', Tolerance: '5%', Power: '1/4W' }, 
         tags: ['pull-up', 'voltage-divider'], 
@@ -40,6 +42,8 @@ const initialComponents: Component[] = [
     { 
         id: 'comp-2', 
         name: 'ESP32-WROOM-32', 
+        // FIX: Add missing simpleName property.
+        simpleName: 'WiFi Microcontroller Module',
         category: 'MCU', 
         specs: { 'Wi-Fi': '802.11 b/g/n', Bluetooth: 'v4.2 BR/EDR & BLE' }, 
         tags: ['iot', 'wifi', 'microcontroller'], 
