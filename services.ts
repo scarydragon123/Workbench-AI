@@ -1,6 +1,7 @@
 
 
 
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Component, InventoryItem, Location as LocationType } from './types';
 
@@ -28,32 +29,36 @@ function fileToGenerativePart(file: File) {
   });
 }
 
-export const identifyComponent = async (imageFile: File | null, manualInput: string): Promise<Omit<Component, 'id' | 'imageUrl'>> => {
+export const identifyComponent = async (imageFile: File | null, manualInput: string): Promise<Omit<Component, 'id' | 'imageUrl'>[]> => {
     const ai = getAiClient();
     const model = 'gemini-2.5-flash';
 
     const userPrompt = `You are Workshop AI, an expert at identifying electronic components with high accuracy.
 
     **Your Task:**
-    Analyze the provided image and/or text to identify the electronic component.
+    Analyze the provided image and/or text to identify ALL electronic components visible.
 
     **Critical Identification Protocol:**
-    1.  **Examine Markings First:** Your HIGHEST PRIORITY is to meticulously read any text, numbers, and logos on the component itself. These markings are the key to the correct part number.
-    2.  **Verify with Visuals:** Cross-reference the markings with the component's physical characteristics (package type, pin count, color, form factor).
-    3.  **Synthesize Information:** Combine the markings and visual data to determine the most accurate part number and details.
+    1.  **Examine Markings First:** Your HIGHEST PRIORITY is to meticulously read any text, numbers, and logos on each component.
+    2.  **Verify with Visuals:** Cross-reference markings with physical characteristics (package type, pin count, color, etc.) for EACH component.
+    3.  **Synthesize Information:** Combine data to determine the most accurate part number and details for each distinct component.
 
     **Output Format:**
-    Provide a detailed JSON response. The 'name' field MUST be the specific part number if visible (e.g., 'INMP441', 'ESP32-WROOM-32'), not a generic name.
+    Provide a JSON response containing a "components" array. Each object in the array represents one identified component. If only one component is found, return an array with a single object. If none are found, return an empty array.
 
-    - simpleName: A common, easy-to-understand name for this component (e.g., 'MEMS Microphone Module').
+    The 'name' field for each component MUST be the specific part number if visible (e.g., 'INMP441', 'ESP32-WROOM-32').
+
+    For each component object, include:
+    - name: The specific part number.
+    - simpleName: A common, easy-to-understand name.
     - category: One of: 'MCU', 'Sensor', 'Passive', 'IC', 'Module', 'Connector', 'Mechanical', 'Power', 'Display'.
     - specs: An array of objects, each with 'specName' and 'specValue'.
-    - description: A short description of what the component is and does.
-    - typicalUses: A list explaining what the component is used for.
+    - description: A short description.
+    - typicalUses: A list of typical uses.
     - recommendedCircuits: A list of example circuits.
     - tags: Common use-case tags.
 
-    If you are uncertain, state your low confidence in the description.
+    If you are uncertain about a component, state your low confidence in its description.
 
     **User-provided input (use as a hint):** "${manualInput}"`;
     
@@ -73,31 +78,39 @@ export const identifyComponent = async (imageFile: File | null, manualInput: str
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            name: { type: Type.STRING },
-            simpleName: { type: Type.STRING },
-            category: { type: Type.STRING },
-            description: { type: Type.STRING },
-            specs: { 
-                type: Type.ARRAY,
-                items: {
-                    type: Type.OBJECT,
-                    properties: {
-                        specName: { type: Type.STRING },
-                        specValue: { type: Type.STRING }
+            components: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                    name: { type: Type.STRING },
+                    simpleName: { type: Type.STRING },
+                    category: { type: Type.STRING },
+                    description: { type: Type.STRING },
+                    specs: { 
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                specName: { type: Type.STRING },
+                                specValue: { type: Type.STRING }
+                            }
+                        }
+                    },
+                    tags: {
+                      type: Type.ARRAY,
+                      items: { type: Type.STRING }
+                    },
+                    typicalUses: {
+                      type: Type.ARRAY,
+                      items: { type: Type.STRING }
+                    },
+                    recommendedCircuits: {
+                      type: Type.ARRAY,
+                      items: { type: Type.STRING }
                     }
                 }
-            },
-            tags: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING }
-            },
-            typicalUses: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING }
-            },
-            recommendedCircuits: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING }
+              }
             }
           }
         },
@@ -106,21 +119,26 @@ export const identifyComponent = async (imageFile: File | null, manualInput: str
 
     try {
         const text = response.text.trim();
-        // The response will have specs as an array, so we need to process it.
-        const parsedResponse = JSON.parse(text) as { specs: { specName: string; specValue: string }[] } & Omit<Component, 'id' | 'imageUrl' | 'specs'>;
+        const parsedResponse = JSON.parse(text) as { components: ({ specs: { specName: string; specValue: string }[] } & Omit<Component, 'id' | 'imageUrl' | 'specs'>)[] };
         
-        const specsObject = (parsedResponse.specs || []).reduce((acc, spec) => {
-            if (spec.specName && spec.specValue) {
-               acc[spec.specName] = spec.specValue;
-            }
-            return acc;
-        }, {} as Record<string, string>);
+        if (!parsedResponse.components) {
+            console.warn("Gemini response did not contain a 'components' array:", parsedResponse);
+            return [];
+        }
 
-        // Return the component with the specs object correctly formatted.
-        return {
-            ...parsedResponse,
-            specs: specsObject,
-        };
+        return parsedResponse.components.map(componentData => {
+            const specsObject = (componentData.specs || []).reduce((acc, spec) => {
+                if (spec.specName && spec.specValue) {
+                   acc[spec.specName] = spec.specValue;
+                }
+                return acc;
+            }, {} as Record<string, string>);
+
+            return {
+                ...componentData,
+                specs: specsObject,
+            };
+        });
     } catch (e) {
         console.error("Failed to parse Gemini response:", response.text, e);
         throw new Error("Could not identify the component from the response.");

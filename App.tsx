@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useInventory } from './context';
 import { useAuth } from './auth';
@@ -6,6 +7,9 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } f
 import { Component, View, ProjectSuggestion, Location as LocationType } from './types';
 import { identifyComponent, getProjectIdeas, askAboutComponent } from './services';
 import { Button, SecondaryButton, CameraIcon, InventoryIcon, LightbulbIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard, ProjectDetailModal, SettingsIcon } from './components';
+
+// Fix: Removed conflicting global type declaration for window.aistudio.
+// The build environment provides this type, and redeclaring it causes a conflict.
 
 // --- ICONS ---
 const SignOutIcon = () => <svg className="w-6 h-6" strokeWidth="1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>;
@@ -17,6 +21,7 @@ const MoonIcon = () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/sv
 type Theme = 'light' | 'dark';
 
 // --- VIEWS ---
+type ViewComponent = Component & { justAdded?: boolean };
 
 // (All original views: IdentifyView, InventoryView, etc. remain here without changes)
 const IdentifyView: React.FC<{ onViewChange: (view: View) => void }> = ({ onViewChange }) => {
@@ -25,14 +30,16 @@ const IdentifyView: React.FC<{ onViewChange: (view: View) => void }> = ({ onView
   const [manualInput, setManualInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<Component | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [result, setResult] = useState<ViewComponent[] | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [componentToAdd, setComponentToAdd] = useState<Component | null>(null);
+
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model'; text: string }[]>([]);
   const [userQuestion, setUserQuestion] = useState('');
   const [isAnswering, setIsAnswering] = useState(false);
   const [identificationHistory, setIdentificationHistory] = useState<Component[]>([]);
 
-  const { addComponent, addInventoryItem, locations } = useInventory();
+  const { components, addComponent, addInventoryItem, locations } = useInventory();
   const [quantity, setQuantity] = useState(1);
   const [selectedLocation, setSelectedLocation] = useState<string>('');
 
@@ -77,18 +84,32 @@ const IdentifyView: React.FC<{ onViewChange: (view: View) => void }> = ({ onView
     setChatHistory([]);
 
     try {
-      const componentData = await identifyComponent(imageFile, manualInput);
-      const newComponent: Component = {
-        ...componentData,
-        id: `comp-${Date.now()}`,
-        imageUrl: preview || undefined
-      };
-      setResult(newComponent);
+      const componentsData = await identifyComponent(imageFile, manualInput);
+       if (componentsData.length === 0) {
+        setError("Could not identify any components. Please try a different image or description.");
+        setResult(null);
+        return;
+      }
+
+      const newComponents: Component[] = componentsData.map(c => ({
+        ...c,
+        id: `comp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        imageUrl: preview || undefined,
+      }));
+
+      setResult(newComponents);
       setIdentificationHistory(prev => {
-        const newHistory = [newComponent, ...prev.filter(c => c.id !== newComponent.id)];
-        return newHistory.slice(0, 5); // Keep the 5 most recent
+        const newHistory = [...newComponents, ...prev];
+        const uniqueHistory = newHistory.filter((component, index, self) => 
+          index === self.findIndex((c) => c.name === component.name)
+        );
+        return uniqueHistory.slice(0, 5);
       });
-      setChatHistory([{ role: 'model', text: `I've identified this as a ${newComponent.name}. What would you like to know about it?` }]);
+      
+      if (newComponents.length === 1) {
+        setChatHistory([{ role: 'model', text: `I've identified this as a ${newComponents[0].name}. What would you like to know about it?` }]);
+      }
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
@@ -98,7 +119,7 @@ const IdentifyView: React.FC<{ onViewChange: (view: View) => void }> = ({ onView
   
   const handleAskQuestion = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!userQuestion.trim() || !result) return;
+      if (!userQuestion.trim() || !result || result.length !== 1) return;
       
       const question = userQuestion.trim();
       setChatHistory(prev => [...prev, { role: 'user', text: question }]);
@@ -106,7 +127,7 @@ const IdentifyView: React.FC<{ onViewChange: (view: View) => void }> = ({ onView
       setIsAnswering(true);
 
       try {
-          const answer = await askAboutComponent(result, question);
+          const answer = await askAboutComponent(result[0], question);
           setChatHistory(prev => [...prev, { role: 'model', text: answer }]);
       } catch (err) {
           setChatHistory(prev => [...prev, { role: 'model', text: "Sorry, I ran into an error trying to answer that. Please try again." }]);
@@ -123,24 +144,40 @@ const IdentifyView: React.FC<{ onViewChange: (view: View) => void }> = ({ onView
     setResult(null);
     setIsLoading(false);
     setChatHistory([]);
+    setComponentToAdd(null);
   }
 
+  const handleOpenAddModal = (component: Component) => {
+    setComponentToAdd(component);
+    setQuantity(1);
+    setIsAddModalOpen(true);
+  };
+
   const handleAddToInventory = () => {
-    if (result && selectedLocation) {
-      addComponent(result);
+    if (componentToAdd && selectedLocation) {
+      const componentExists = components.some(c => c.id === componentToAdd.id);
+      if (!componentExists) {
+        addComponent(componentToAdd);
+      }
+      
       addInventoryItem({
-        componentId: result.id,
+        componentId: componentToAdd.id,
         quantity: Number(quantity),
         locationId: selectedLocation,
       });
-      setIsModalOpen(false);
-      reset();
+
+      setResult(prev => prev ? prev.map(c => c.id === componentToAdd.id ? { ...c, justAdded: true } : c) : null);
+      
+      setIsAddModalOpen(false);
+      setComponentToAdd(null);
+      // After adding, we can switch to inventory view as a convenience
       onViewChange(View.INVENTORY);
     }
   };
 
   const handleHistoryClick = (component: Component) => {
-    setResult(component);
+    setResult([component]);
+    setChatHistory([{ role: 'model', text: `I've identified this as a ${component.name}. What would you like to know about it?` }]);
     setError(null);
   };
 
@@ -216,89 +253,127 @@ const IdentifyView: React.FC<{ onViewChange: (view: View) => void }> = ({ onView
 
       {result && (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg animate-fade-in">
-          <h2 className="text-2xl font-bold text-teal-500 dark:text-teal-400 mb-4">Identification Result</h2>
-          <div className="flex flex-col md:flex-row gap-6">
-            {result.imageUrl && <img src={result.imageUrl} alt={result.name} className="w-full md:w-48 h-48 object-cover rounded-lg bg-gray-200 dark:bg-gray-700" />}
-            <div className="flex-1 space-y-4">
+          <h2 className="text-2xl font-bold text-teal-500 dark:text-teal-400 mb-4">
+            {result.length > 1 ? `Found ${result.length} Components` : 'Identification Result'}
+          </h2>
+          
+          {result.length === 1 && (() => {
+            const singleResult = result[0];
+            return (
               <div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{result.name}</h3>
-                <p className="text-lg text-teal-600 dark:text-teal-300 -mt-1">{result.simpleName}</p>
-                <p className="text-md text-gray-500 dark:text-gray-400">{result.category}</p>
-              </div>
-              <p className="text-gray-600 dark:text-gray-300">{result.description}</p>
-              <div className="flex flex-wrap gap-2">
-                {result.tags.map(tag => <span key={tag} className="bg-gray-200 dark:bg-gray-700 text-teal-700 dark:text-teal-300 text-xs font-semibold px-2 py-1 rounded-full">{tag}</span>)}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <div>
-              <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Typical Applications</h4>
-              <ul className="list-disc list-inside text-gray-500 dark:text-gray-400 space-y-1">
-                  {(result.typicalUses || []).map((use, i) => <li key={i}>{use}</li>)}
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Specifications</h4>
-              <div className="space-y-1 text-gray-500 dark:text-gray-400 max-h-40 overflow-y-auto">
-                  {Object.entries(result.specs).map(([key, value]) => (
-                      <div key={key} className="flex justify-between text-sm pr-2">
-                          <span className="font-semibold text-gray-700 dark:text-gray-300 mr-2">{key}:</span>
-                          <span className="text-right truncate">{value}</span>
-                      </div>
-                  ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <Button onClick={() => setIsModalOpen(true)}>Add to Inventory</Button>
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Ask About This Component</h3>
-            <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 h-64 overflow-y-auto flex flex-col gap-4">
-              {chatHistory.map((msg, index) => (
-                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.role === 'user' ? 'bg-teal-500 text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}>
-                    <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
-                  </div>
-                </div>
-              ))}
-              {isAnswering && (
-                <div className="flex justify-start">
-                  <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-white dark:bg-gray-700">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-teal-500 dark:bg-teal-400 rounded-full animate-pulse"></div>
-                      <div className="w-2 h-2 bg-teal-500 dark:bg-teal-400 rounded-full animate-pulse [animation-delay:0.2s]"></div>
-                      <div className="w-2 h-2 bg-teal-500 dark:bg-teal-400 rounded-full animate-pulse [animation-delay:0.4s]"></div>
+                <div className="flex flex-col md:flex-row gap-6">
+                  {singleResult.imageUrl && <img src={singleResult.imageUrl} alt={singleResult.name} className="w-full md:w-48 h-48 object-cover rounded-lg bg-gray-200 dark:bg-gray-700" />}
+                  <div className="flex-1 space-y-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{singleResult.name}</h3>
+                      <p className="text-lg text-teal-600 dark:text-teal-300 -mt-1">{singleResult.simpleName}</p>
+                      <p className="text-md text-gray-500 dark:text-gray-400">{singleResult.category}</p>
+                    </div>
+                    <p className="text-gray-600 dark:text-gray-300">{singleResult.description}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {singleResult.tags.map(tag => <span key={tag} className="bg-gray-200 dark:bg-gray-700 text-teal-700 dark:text-teal-300 text-xs font-semibold px-2 py-1 rounded-full">{tag}</span>)}
                     </div>
                   </div>
                 </div>
-              )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <div>
+                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Typical Applications</h4>
+                    <ul className="list-disc list-inside text-gray-500 dark:text-gray-400 space-y-1">
+                        {(singleResult.typicalUses || []).map((use, i) => <li key={i}>{use}</li>)}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Specifications</h4>
+                    <div className="space-y-1 text-gray-500 dark:text-gray-400 max-h-40 overflow-y-auto">
+                        {Object.entries(singleResult.specs).map(([key, value]) => (
+                            <div key={key} className="flex justify-between text-sm pr-2">
+                                <span className="font-semibold text-gray-700 dark:text-gray-300 mr-2">{key}:</span>
+                                <span className="text-right truncate">{value}</span>
+                            </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <Button onClick={() => handleOpenAddModal(singleResult)} disabled={singleResult.justAdded}>
+                    {singleResult.justAdded ? 'Added ✓' : 'Add to Inventory'}
+                  </Button>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Ask About This Component</h3>
+                  <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 h-64 overflow-y-auto flex flex-col gap-4">
+                    {chatHistory.map((msg, index) => (
+                      <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.role === 'user' ? 'bg-teal-500 text-white' : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100'}`}>
+                          <p className="text-sm whitespace-pre-wrap">{msg.text}</p>
+                        </div>
+                      </div>
+                    ))}
+                    {isAnswering && (
+                      <div className="flex justify-start">
+                        <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-white dark:bg-gray-700">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-teal-500 dark:bg-teal-400 rounded-full animate-pulse"></div>
+                            <div className="w-2 h-2 bg-teal-500 dark:bg-teal-400 rounded-full animate-pulse [animation-delay:0.2s]"></div>
+                            <div className="w-2 h-2 bg-teal-500 dark:bg-teal-400 rounded-full animate-pulse [animation-delay:0.4s]"></div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <form onSubmit={handleAskQuestion} className="mt-4 flex gap-2">
+                    <input 
+                      type="text"
+                      value={userQuestion}
+                      onChange={(e) => setUserQuestion(e.target.value)}
+                      placeholder="e.g., How do I power this?"
+                      className="input-style flex-1"
+                      disabled={isAnswering}
+                    />
+                    <Button type="submit" disabled={isAnswering || !userQuestion.trim()}>
+                      {isAnswering ? '...' : 'Send'}
+                    </Button>
+                  </form>
+                </div>
+              </div>
+            );
+          })()}
+
+          {result.length > 1 && (
+            <div className="space-y-4">
+              {result.map(component => (
+                <div key={component.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="md:col-span-2">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">{component.name}</h3>
+                    <p className="text-md text-gray-500 dark:text-gray-400 mb-2">{component.simpleName}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">{component.description}</p>
+                  </div>
+                  <div className="flex flex-col items-start md:items-end justify-between">
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {component.tags.slice(0, 3).map(tag => <span key={tag} className="bg-gray-200 text-teal-700 dark:bg-gray-700 dark:text-teal-300 text-xs font-semibold px-2 py-1 rounded-full">{tag}</span>)}
+                    </div>
+                    <Button 
+                      onClick={() => handleOpenAddModal(component)} 
+                      className="w-full md:w-auto"
+                      disabled={component.justAdded}
+                    >
+                      {component.justAdded ? 'Added ✓' : 'Add to Inventory'}
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
-            <form onSubmit={handleAskQuestion} className="mt-4 flex gap-2">
-              <input 
-                type="text"
-                value={userQuestion}
-                onChange={(e) => setUserQuestion(e.target.value)}
-                placeholder="e.g., How do I power this?"
-                className="input-style flex-1"
-                disabled={isAnswering}
-              />
-              <Button type="submit" disabled={isAnswering || !userQuestion.trim()}>
-                {isAnswering ? '...' : 'Send'}
-              </Button>
-            </form>
-          </div>
+          )}
         </div>
       )}
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add to Inventory">
+      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Add to Inventory">
         {locations.length > 0 ? (
             <div className="space-y-4">
-                <h3 className="text-lg font-semibold">{result?.name}</h3>
+                <h3 className="text-lg font-semibold">{componentToAdd?.name}</h3>
                 <div>
                     <label htmlFor="quantity" className="label-style">Quantity</label>
                     <input type="number" id="quantity" min="1" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="input-style mt-1 py-2 px-3" />
@@ -310,7 +385,7 @@ const IdentifyView: React.FC<{ onViewChange: (view: View) => void }> = ({ onView
                     </select>
                 </div>
                 <div className="flex justify-end gap-4">
-                    <SecondaryButton onClick={() => setIsModalOpen(false)}>Cancel</SecondaryButton>
+                    <SecondaryButton onClick={() => setIsAddModalOpen(false)}>Cancel</SecondaryButton>
                     <Button onClick={handleAddToInventory} disabled={!selectedLocation}>Add Item</Button>
                 </div>
             </div>
@@ -320,8 +395,8 @@ const IdentifyView: React.FC<{ onViewChange: (view: View) => void }> = ({ onView
                 <p className="text-gray-600 dark:text-gray-400 mt-2 mb-4">You need to create a storage location before you can add items to your inventory.</p>
                 <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">Please go to the 'Locations' tab to add one.</p>
                  <div className="flex justify-center gap-4">
-                    <SecondaryButton onClick={() => setIsModalOpen(false)}>Close</SecondaryButton>
-                    <Button onClick={() => { setIsModalOpen(false); onViewChange(View.LOCATIONS); }}>Go to Locations</Button>
+                    <SecondaryButton onClick={() => setIsAddModalOpen(false)}>Close</SecondaryButton>
+                    <Button onClick={() => { setIsAddModalOpen(false); onViewChange(View.LOCATIONS); }}>Go to Locations</Button>
                 </div>
             </div>
         )}
@@ -683,6 +758,8 @@ const App: React.FC = () => {
     return 'light';
   });
 
+  const isAiStudio = !!window.aistudio;
+
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
@@ -694,29 +771,28 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const checkApiKey = async () => {
-      // @ts-ignore
-      if (currentUser && window.aistudio) {
-        setApiKeyStatus('checking');
-        // @ts-ignore
-        if (await window.aistudio.hasSelectedApiKey()) {
-            setApiKeyStatus('ready');
+      if (isAiStudio) {
+        // AI Studio environment
+        const hasKey = await window.aistudio!.hasSelectedApiKey();
+        setApiKeyStatus(hasKey ? 'ready' : 'needed');
+      } else {
+        // Standard environment (e.g., GitHub Pages)
+        const key = process.env.API_KEY;
+        if (key && key !== "PASTE_YOUR_API_KEY_HERE" && key.startsWith("AIza")) {
+          setApiKeyStatus('ready');
         } else {
-            setApiKeyStatus('needed');
+          setApiKeyStatus('needed');
         }
       }
     };
     checkApiKey();
-  }, [currentUser]);
+  }, [isAiStudio]);
   
   const handleSelectKey = async () => {
-    // @ts-ignore
-    if (window.aistudio) {
-        // @ts-ignore
-        await window.aistudio.openSelectKey();
-        // Optimistically assume success and update state to render the app.
-        setApiKeyStatus('ready');
-    } else {
-        alert("API key selection is not available in this environment.");
+    if (isAiStudio) {
+      await window.aistudio!.openSelectKey();
+      // Optimistically assume key is selected and move to ready state to unblock UI
+      setApiKeyStatus('ready');
     }
   };
 
@@ -733,17 +809,47 @@ const App: React.FC = () => {
   }
 
   if (apiKeyStatus === 'needed') {
+      if (isAiStudio) {
+          return (
+              <div className={`min-h-screen flex items-center justify-center bg-gray-900 text-gray-100 p-4 ${theme}`}>
+                  <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-lg shadow-lg text-center">
+                      <div className="text-teal-400 mx-auto animate-pulse">
+                          <svg className="w-12 h-12" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <circle cx="10" cy="10" r="2" fill="currentColor"/><circle cx="20" cy="10" r="2" fill="currentColor"/><circle cx="30" cy="10" r="2" fill="currentColor"/>
+                              <circle cx="10" cy="20" r="2" fill="currentColor"/><circle cx="20" cy="20" r="2" fill="currentColor"/><circle cx="30" cy="20" r="2" fill="currentColor"/>
+                              <circle cx="10" cy="30" r="2" fill="currentColor"/><circle cx="20" cy="30" r="2" fill="currentColor"/><circle cx="30" cy="30" r="2" fill="currentColor"/>
+                          </svg>
+                      </div>
+                      <h2 className="text-2xl font-bold">API Key Required</h2>
+                      <p className="text-gray-400">
+                          To use Workshop AI, you need to select a Google AI API key. Your key is stored securely and is only used to communicate with the Gemini API.
+                      </p>
+                      <Button onClick={handleSelectKey} className="w-full justify-center">
+                          Select API Key
+                      </Button>
+                  </div>
+              </div>
+          );
+      }
       return (
-          <div className={`min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 ${theme}`}>
-              <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg text-center">
+          <div className={`min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 ${theme}`}>
+              <div className="w-full max-w-lg p-8 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg text-center">
                   <WorkshopIcon />
-                  <h2 className="text-2xl font-bold">API Key Required</h2>
+                  <h2 className="text-2xl font-bold">API Key Configuration Required</h2>
                   <p className="text-gray-600 dark:text-gray-400">
-                      To use Workshop AI, you need to select a Google AI API key. Your key is stored securely and is only used to communicate with the Gemini API.
+                      To begin, please edit the <code>index.html</code> file and add your Google AI API key.
                   </p>
-                  <Button onClick={handleSelectKey} className="w-full justify-center">
-                      Select API Key
-                  </Button>
+                  <div className="mt-4 text-left text-sm bg-gray-200 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto font-mono">
+                      <pre><code className="text-gray-800 dark:text-gray-200">
+                          {'<script>\n'}
+                          {'  // ...\n'}
+                          {'  window.process.env.API_KEY = "YOUR_API_KEY_HERE";\n'}
+                          {'</script>'}
+                      </code></pre>
+                  </div>
+                   <p className="text-sm text-gray-500 dark:text-gray-500 mt-4">
+                      After adding your key, refresh the page. For deployment on services like GitHub Pages, ensure your key's restrictions in the Google Cloud Console are configured to allow your website's URL.
+                  </p>
               </div>
           </div>
       );

@@ -11,6 +11,18 @@
     <link rel="apple-touch-icon" href="./icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <script>
+      // Polyfill 'process' for browser environment
+      window.process = window.process || { env: {} };
+
+      // --- Workshop AI Configuration ---
+      // Please fill in your Google AI API key below.
+      // 1. Get your API key from Google AI Studio (https://aistudio.google.com/app/apikey).
+      // 2. Paste the key between the quotes.
+      // 3. For deployment, ensure your key's API restrictions in Google Cloud Console include your website's URL.
+      window.process.env.API_KEY = "PASTE_YOUR_API_KEY_HERE";
+    </script>
 
     <!-- Polyfill for import maps for browsers like older Safari -->
     <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
