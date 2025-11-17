@@ -1,9 +1,12 @@
 
 
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Component, InventoryItem, Location as LocationType } from './types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getAiClient = () => {
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+};
 
 function fileToGenerativePart(file: File) {
   return new Promise((resolve, reject) => {
@@ -26,6 +29,7 @@ function fileToGenerativePart(file: File) {
 }
 
 export const identifyComponent = async (imageFile: File | null, manualInput: string): Promise<Omit<Component, 'id' | 'imageUrl'>> => {
+    const ai = getAiClient();
     const model = 'gemini-2.5-flash';
 
     const userPrompt = `You are Workshop AI, an expert at identifying electronic components with high accuracy.
@@ -124,6 +128,7 @@ export const identifyComponent = async (imageFile: File | null, manualInput: str
 };
 
 export const askAboutComponent = async (component: Component, question: string): Promise<string> => {
+    const ai = getAiClient();
     const model = 'gemini-2.5-flash';
     const componentContext = `
         Component Name: ${component.name}
@@ -154,6 +159,7 @@ export const askAboutComponent = async (component: Component, question: string):
 };
 
 export const getProjectIdeas = async (inventory: (InventoryItem & { component: Component; location: LocationType })[]) => {
+    const ai = getAiClient();
     const model = 'gemini-2.5-pro';
     const availableComponents = inventory.map(item => ({ name: item.component.name, quantity: item.quantity }));
     

@@ -652,6 +652,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.IDENTIFY);
   const { currentUser } = useAuth();
   const { loading: inventoryLoading } = useInventory();
+  const [apiKeyStatus, setApiKeyStatus] = useState<'checking' | 'ready' | 'needed'>('checking');
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
       const storedTheme = window.localStorage.getItem('theme') as Theme | null;
@@ -672,8 +673,61 @@ const App: React.FC = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    const checkApiKey = async () => {
+      // @ts-ignore
+      if (currentUser && window.aistudio) {
+        setApiKeyStatus('checking');
+        // @ts-ignore
+        if (await window.aistudio.hasSelectedApiKey()) {
+            setApiKeyStatus('ready');
+        } else {
+            setApiKeyStatus('needed');
+        }
+      }
+    };
+    checkApiKey();
+  }, [currentUser]);
+  
+  const handleSelectKey = async () => {
+    // @ts-ignore
+    if (window.aistudio) {
+        // @ts-ignore
+        await window.aistudio.openSelectKey();
+        // Optimistically assume success and update state to render the app.
+        setApiKeyStatus('ready');
+    } else {
+        alert("API key selection is not available in this environment.");
+    }
+  };
+
   if (!currentUser) {
     return <LoginView />;
+  }
+  
+  if (apiKeyStatus === 'checking') {
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500 dark:border-teal-400"></div>
+        </div>
+    );
+  }
+
+  if (apiKeyStatus === 'needed') {
+      return (
+          <div className={`min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 ${theme}`}>
+              <div className="w-full max-w-md p-8 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg text-center">
+                  <WorkshopIcon />
+                  <h2 className="text-2xl font-bold">API Key Required</h2>
+                  <p className="text-gray-600 dark:text-gray-400">
+                      To use Workshop AI, you need to select a Google AI API key. Your key is stored securely and is only used to communicate with the Gemini API.
+                  </p>
+                  <Button onClick={handleSelectKey} className="w-full justify-center">
+                      Select API Key
+                  </Button>
+              </div>
+          </div>
+      );
   }
   
   const renderView = () => {
