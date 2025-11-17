@@ -1,5 +1,6 @@
+
 import React, { ReactNode, useState, useRef, useEffect } from 'react';
-import { Component, Location, ProjectSuggestion, InventoryItem, Project, ProjectComponent } from './types';
+import { Component, Location as LocationType, ProjectSuggestion, InventoryItem, Project, ProjectComponent } from './types';
 import { useInventory } from './context';
 
 // --- Icons ---
@@ -8,19 +9,43 @@ const iconProps = {
   strokeWidth: 1.5,
 };
 
-export const ScanIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>;
-export const InventoryIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 7.125A2.25 2.25 0 014.5 4.875h15A2.25 2.25 0 0121.75 7.125v1.518a2.25 2.25 0 01-.64 1.584l-3.223 3.223a1.875 1.875 0 01-2.652 0l-.707-.707a1.875 1.875 0 00-2.652 0l-3.223 3.223a2.25 2.25 0 01-1.584.64H4.5A2.25 2.25 0 012.25 18V7.125z" /></svg>;
-export const ProjectsIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.898 20.562L16.25 21.75l-.648-1.188a2.25 2.25 0 01-1.423-1.423L13.125 18l1.188-.648a2.25 2.25 0 011.423-1.423L16.25 15l.648 1.188a2.25 2.25 0 011.423 1.423L19.5 18l-1.188.648a2.25 2.25 0 01-1.423 1.423z" /></svg>;
-export const ClipboardListIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
-export const LocationIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>;
-export const CloseIcon = () => <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>;
-export const CheckIcon = () => <svg className="w-5 h-5 text-green-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>;
-export const WarningIcon = () => <svg className="w-5 h-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>;
-export const SearchIcon = () => <svg {...iconProps} strokeWidth={2} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>;
-const PlusIcon = () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>;
-const MinusIcon = () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" /></svg>;
-const TrashIcon = () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>;
+const smallIconProps = {
+    className: "w-4 h-4",
+    strokeWidth: 2,
+}
 
+export const ScanIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-2.33V4.5A2.25 2.25 0 0016.5 2.25h-9A2.25 2.25 0 005.25 4.5v.73" /></svg>;
+export const InventoryIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>;
+export const ProjectsIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.211 1.002l-4.254 5.956a2.25 2.25 0 00.21 3.002l4.254 2.968a2.25 2.25 0 003.002-.21l5.956-4.254a2.25 2.25 0 001.002-.211v-5.714a2.25 2.25 0 00-2.25-2.25H12a2.25 2.25 0 00-2.25 2.25z" /></svg>;
+export const LocationIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>;
+export const ClipboardListIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>;
+export const SearchIcon = () => <svg {...smallIconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>;
+const XIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>;
+const TrashIcon = () => <svg {...smallIconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.124-2.033-2.124H8.033c-1.12 0-2.033.944-2.033 2.124v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>;
+const PlusIcon = () => <svg {...smallIconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>;
+
+// --- Buttons ---
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    children: ReactNode;
+}
+
+export const Button: React.FC<ButtonProps> = ({ children, className = '', ...props }) => (
+  <button
+    className={`bg-teal-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-opacity-75 transition-all disabled:bg-gray-600 disabled:cursor-not-allowed ${className}`}
+    {...props}
+  >
+    {children}
+  </button>
+);
+
+export const SecondaryButton: React.FC<ButtonProps> = ({ children, className = '', ...props }) => (
+    <button
+      className={`bg-gray-700 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all disabled:bg-gray-800 disabled:cursor-not-allowed ${className}`}
+      {...props}
+    >
+      {children}
+    </button>
+);
 
 // --- Modal ---
 interface ModalProps {
@@ -28,202 +53,154 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
 }
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+
+export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = 'md' }) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
   if (!isOpen) return null;
+
+  const sizeClasses = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-lg',
+    xl: 'max-w-2xl',
+  }
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 transition-opacity duration-300" onClick={onClose}>
-      <div className="bg-gray-800 rounded-lg shadow-2xl p-6 w-full max-w-lg m-4 transform transition-all duration-300 scale-95 animate-scale-in" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-center mb-4">
+    <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4 animate-fade-in" onClick={onClose} role="dialog" aria-modal="true">
+      <div 
+        ref={modalRef}
+        className={`bg-gray-800 rounded-lg shadow-xl w-full ${sizeClasses[size]} overflow-hidden animate-scale-in`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center p-4 border-b border-gray-700">
           <h2 className="text-xl font-bold text-teal-400">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white"><CloseIcon /></button>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors" aria-label="Close modal"><XIcon /></button>
         </div>
-        {children}
+        <div className="p-6 max-h-[80vh] overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>
   );
 };
 
-// --- Buttons ---
-export const Button: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, className, ...props }) => {
-  return (
-    <button className={`bg-teal-600 hover:bg-teal-500 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 disabled:bg-gray-600 disabled:cursor-not-allowed ${className}`} {...props}>
-      {children}
-    </button>
-  );
-};
-export const SecondaryButton: React.FC<React.ButtonHTMLAttributes<HTMLButtonElement>> = ({ children, className, ...props }) => {
-  return (
-    <button className={`bg-gray-700 hover:bg-gray-600 text-gray-200 font-bold py-2 px-4 rounded-lg transition duration-300 ${className}`} {...props}>
-      {children}
-    </button>
-  );
-};
-
-// --- Quantity Editor ---
-interface QuantityEditorProps {
-    value: number;
-    onChange: (newValue: number) => void;
-}
-const QuantityEditor: React.FC<QuantityEditorProps> = ({ value, onChange }) => {
-    const [inputValue, setInputValue] = useState(value.toString());
-    const intervalRef = useRef<number | null>(null);
-    const timeoutRef = useRef<number | null>(null);
-    const valueRef = useRef(value);
-
-    useEffect(() => {
-        setInputValue(value.toString());
-        valueRef.current = value;
-    }, [value]);
-
-    const handleChange = (newValue: number) => {
-        const clampedValue = Math.max(0, newValue);
-        if (clampedValue !== valueRef.current) {
-            onChange(clampedValue);
-        }
-    };
-
-    const startChanging = (delta: number) => {
-        handleChange(valueRef.current + delta);
-        timeoutRef.current = window.setTimeout(() => {
-            intervalRef.current = window.setInterval(() => {
-                handleChange(valueRef.current + delta);
-            }, 80);
-        }, 400);
-    };
-
-    const stopChanging = () => {
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setInputValue(e.target.value);
-    };
-
-    const handleInputBlur = () => {
-        const num = parseInt(inputValue, 10);
-        if (!isNaN(num)) {
-            handleChange(num);
-        } else {
-            setInputValue(value.toString()); // Revert on invalid input
-        }
-    };
-
-    return (
-        <div className="flex items-center gap-2">
-            <button
-                onMouseDown={() => startChanging(-1)}
-                onMouseUp={stopChanging}
-                onMouseLeave={stopChanging}
-                className="p-1.5 rounded-full bg-gray-600 hover:bg-red-500 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500"
-                aria-label="Decrement quantity"
-            >
-                <MinusIcon />
-            </button>
-            <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={inputValue}
-                onChange={handleInputChange}
-                onBlur={handleInputBlur}
-                className="input-style !w-20 text-center text-lg font-bold py-1"
-                aria-label="Current quantity"
-            />
-            <button
-                onMouseDown={() => startChanging(1)}
-                onMouseUp={stopChanging}
-                onMouseLeave={stopChanging}
-                className="p-1.5 rounded-full bg-gray-600 hover:bg-green-500 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
-                aria-label="Increment quantity"
-            >
-                <PlusIcon />
-            </button>
-        </div>
-    );
-};
-
-
 // --- Cards ---
 interface ComponentCardProps {
     component: Component;
     quantity: number;
-    location: Location;
-    onClick?: () => void;
+    location: LocationType;
+    onClick: () => void;
 }
-export const ComponentCard: React.FC<ComponentCardProps> = ({ component, quantity, location, onClick }) => {
-    const cardClasses = "bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-700 flex flex-col md:flex-row gap-4 transition-transform duration-200" + (onClick ? " cursor-pointer hover:border-teal-500 hover:scale-[1.02]" : "");
-    return (
-        <div className={cardClasses} onClick={onClick}>
-            {component.imageUrl && <img src={component.imageUrl} alt={component.name} className="w-full md:w-24 h-24 object-cover rounded-md" />}
-            <div className="flex-1">
-                <h3 className="text-lg font-bold text-teal-400">{component.name}</h3>
-                <p className="text-sm text-gray-400">{component.category}</p>
-                <div className="text-2xl font-semibold my-2">{quantity} <span className="text-base font-normal text-gray-500">in workbench</span></div>
-                <p className="text-sm text-gray-300">
-                    <span className="font-semibold">Location:</span> {location.name}
-                </p>
-                <div className="flex flex-wrap gap-2 mt-2">
-                    {component.tags.map(tag => (
-                        <span key={tag} className="bg-gray-700 text-teal-300 text-xs font-semibold px-2 py-1 rounded-full">{tag}</span>
-                    ))}
-                </div>
+
+export const ComponentCard: React.FC<ComponentCardProps> = ({ component, quantity, location, onClick }) => (
+    <div 
+        className="bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-teal-500 cursor-pointer transition-all group"
+        onClick={onClick}
+    >
+        <h3 className="font-bold text-lg text-gray-100 truncate group-hover:text-teal-400">{component.name}</h3>
+        <p className="text-sm text-gray-400">{component.category}</p>
+        <div className="mt-4 flex justify-between items-end">
+            <div>
+                <p className="text-xs text-gray-500">Location</p>
+                <p className="font-semibold text-gray-300">{location.name}</p>
+            </div>
+            <div>
+                <p className="text-xs text-gray-500">Quantity</p>
+                <p className="font-bold text-2xl text-teal-400">{quantity}</p>
             </div>
         </div>
-    );
-};
+    </div>
+);
 
 interface ProjectCardProps {
     project: ProjectSuggestion;
 }
-export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
-    return (
-        <div className="bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-700 animate-fade-in">
-            <h3 className="text-xl font-bold text-teal-400 mb-2">{project.name}</h3>
-            <div className="flex items-center gap-2 mb-2 text-sm text-gray-400">
-                <span>Difficulty:</span>
-                <div className="flex gap-1">
-                    {[...Array(5)].map((_, i) => (
-                        <div key={i} className={`w-4 h-4 rounded-full ${i < project.difficulty ? 'bg-teal-500' : 'bg-gray-600'}`}></div>
-                    ))}
-                </div>
-            </div>
-            <p className="text-gray-300 mb-4">{project.description}</p>
-            <div>
-                <h4 className="font-semibold mb-2">Required Components:</h4>
-                <ul className="space-y-1 text-sm">
-                    {project.components.map((c, i) => (
-                        <li key={i} className="flex items-center gap-2">
-                            {c.available ? <CheckIcon /> : <WarningIcon />}
-                            <span>{c.name} (x{c.quantity})</span>
-                        </li>
-                    ))}
-                </ul>
+
+export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => (
+    <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 flex flex-col h-full">
+        <h3 className="font-bold text-lg text-teal-400">{project.name}</h3>
+        <div className="flex items-center gap-2 my-1">
+            <span className="text-xs font-semibold text-gray-300">Difficulty:</span>
+            <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                    <div key={i} className={`w-3 h-3 rounded-full ${i < project.difficulty ? 'bg-teal-500' : 'bg-gray-600'}`}></div>
+                ))}
             </div>
         </div>
-    );
-};
+        <p className="text-sm text-gray-400 flex-grow">{project.description}</p>
+        <div className="mt-4">
+            <h4 className="font-semibold text-sm text-gray-200 mb-2">Required Components:</h4>
+            <ul className="space-y-1 text-sm">
+                {project.components.map((c, i) => (
+                    <li key={i} className="flex justify-between items-center">
+                        <span className={`truncate ${c.available ? 'text-gray-300' : 'text-red-400'}`}>
+                           {c.quantity}x {c.name}
+                        </span>
+                        {c.available ? 
+                            <span className="text-xs bg-green-900/50 text-green-300 px-2 py-0.5 rounded-full">Available</span> : 
+                            <span className="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded-full">Missing</span>}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    </div>
+);
 
 interface ProjectManagementCardProps {
     project: Project;
 }
 export const ProjectManagementCard: React.FC<ProjectManagementCardProps> = ({ project }) => {
-    const { findComponentById } = useInventory();
+    const { findComponentById, inventory } = useInventory();
+    
+    const totalRequired = project.components.length;
+    const availableCount = project.components.filter(req => {
+        const totalAvailable = inventory
+            .filter(item => item.componentId === req.componentId)
+            .reduce((sum, item) => sum + item.quantity, 0);
+        return totalAvailable >= req.quantity;
+    }).length;
+
+    const availabilityRatio = totalRequired > 0 ? availableCount / totalRequired : 1;
+
     return (
-        <div className="bg-gray-800 p-4 rounded-lg shadow-lg border border-gray-700 animate-fade-in">
-            <h3 className="text-xl font-bold text-teal-400 mb-2">{project.name}</h3>
-            <p className="text-gray-300 mb-4">{project.description}</p>
+        <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 flex flex-col h-full">
+            <h3 className="font-bold text-lg text-teal-400">{project.name}</h3>
+            <p className="text-sm text-gray-400 flex-grow mt-1 mb-4">{project.description}</p>
+            
             <div>
-                <h4 className="font-semibold mb-2">Components Used:</h4>
-                <ul className="space-y-1 text-sm">
+                <div className="flex justify-between items-center mb-1">
+                    <h4 className="font-semibold text-sm text-gray-200">Bill of Materials</h4>
+                    <span className="text-xs text-gray-400">{availableCount} of {totalRequired} components available</span>
+                </div>
+                <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
+                    <div className="bg-teal-500 h-2 rounded-full" style={{ width: `${availabilityRatio * 100}%` }}></div>
+                </div>
+                <ul className="space-y-1 text-sm max-h-32 overflow-y-auto pr-2">
                     {project.components.map((c, i) => {
-                        const component = findComponentById(c.componentId);
-                        return (
-                           <li key={i} className="flex items-center gap-2 text-gray-400">
-                               <span>{component?.name || 'Unknown Component'} (x{c.quantity})</span>
-                           </li>
-                        )
+                         const component = findComponentById(c.componentId);
+                         const totalAvailable = inventory
+                            .filter(item => item.componentId === c.componentId)
+                            .reduce((sum, item) => sum + item.quantity, 0);
+                         const isAvailable = totalAvailable >= c.quantity;
+                         return (
+                            <li key={i} className="flex justify-between items-center text-gray-300">
+                                <span className="truncate">{c.quantity}x {component?.name || 'Unknown'}</span>
+                                <span className={`font-mono text-xs ${isAvailable ? 'text-green-400' : 'text-red-400'}`}>
+                                    {totalAvailable}/{c.quantity}
+                                </span>
+                            </li>
+                         )
                     })}
                 </ul>
             </div>
@@ -232,112 +209,100 @@ export const ProjectManagementCard: React.FC<ProjectManagementCardProps> = ({ pr
 };
 
 
+// --- Modals ---
+
 interface ComponentDetailModalProps {
-    component: Component | null;
     isOpen: boolean;
     onClose: () => void;
+    component: Component | null;
 }
-export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ component, isOpen, onClose }) => {
-    const { inventory, updateInventoryItem, findLocationById, getProjectsForComponent } = useInventory();
 
+export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ isOpen, onClose, component }) => {
+    const { inventory, updateInventoryItem, deleteComponent, findLocationById, getProjectsForComponent } = useInventory();
+    
     if (!component) return null;
 
-    const inventoryForComponent = inventory.filter(item => item.componentId === component.id);
-    const projectsUsingComponent = getProjectsForComponent(component.id);
+    const componentInventory = inventory.filter(i => i.componentId === component.id);
+    const projectsUsing = getProjectsForComponent(component.id);
+
+    const handleQuantityChange = (locationId: string, newQuantity: string) => {
+        updateInventoryItem(component.id, locationId, Number(newQuantity));
+    };
+    
+    const handleDelete = () => {
+        if (window.confirm(`Are you sure you want to delete ${component.name}? This will remove it from all locations and cannot be undone.`)) {
+            deleteComponent(component.id);
+            onClose();
+        }
+    };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title={component.name}>
-            <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+        <Modal isOpen={isOpen} onClose={onClose} title="Component Details" size="xl">
+            <div className="space-y-6">
                 <div className="flex flex-col md:flex-row gap-6">
-                    {component.imageUrl && <img src={component.imageUrl} alt={component.name} className="w-full md:w-32 h-32 object-cover rounded-lg" />}
+                    {component.imageUrl && <img src={component.imageUrl} alt={component.name} className="w-full md:w-48 h-48 object-cover rounded-lg bg-gray-700" />}
                     <div className="flex-1">
+                        <h3 className="text-2xl font-bold text-gray-100">{component.name}</h3>
                         <p className="text-md text-gray-400 mb-2">{component.category}</p>
-                        <div className="flex flex-wrap gap-2">
+                        <p className="text-gray-300 mb-4">{component.description}</p>
+                         <div className="flex flex-wrap gap-2">
                             {component.tags.map(tag => <span key={tag} className="bg-gray-700 text-teal-300 text-xs font-semibold px-2 py-1 rounded-full">{tag}</span>)}
                         </div>
                     </div>
                 </div>
 
-                <div>
-                    <h4 className="font-semibold text-gray-200 mb-2">Specifications:</h4>
-                    <div className="bg-gray-900/50 rounded-md border border-gray-700">
-                        {Object.keys(component.specs).length > 0 ? (
-                            <ul className="divide-y divide-gray-700">
-                                {Object.entries(component.specs).map(([key, value]) => (
-                                    <li key={key} className="px-4 py-2 flex justify-between items-center text-sm break-words">
-                                        <span className="text-gray-400 font-medium mr-2">{key}</span>
-                                        <span className="text-gray-100 text-right">{value}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="px-4 py-3 text-sm text-gray-500">No specifications available.</p>
-                        )}
-                    </div>
-                </div>
-
-                <div>
-                    <h4 className="font-semibold text-gray-200 mb-2 mt-4">Component Knowledge</h4>
-                    <div className="bg-gray-900/50 p-4 rounded-md border border-gray-700 space-y-4">
-                        <div>
-                            <h5 className="text-sm font-bold text-teal-400 mb-1">Description</h5>
-                            <p className="text-sm text-gray-300">{component.description || 'No description available.'}</p>
-                        </div>
-                        
-                        {component.typicalUses && component.typicalUses.length > 0 && (
-                            <div>
-                                <h5 className="text-sm font-bold text-teal-400 mb-1">Typical Uses</h5>
-                                <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
-                                    {component.typicalUses.map((use, index) => <li key={index}>{use}</li>)}
-                                </ul>
-                            </div>
-                        )}
-                        
-                        {component.recommendedCircuits && component.recommendedCircuits.length > 0 && (
-                            <div>
-                                <h5 className="text-sm font-bold text-teal-400 mb-1">Recommended Circuits</h5>
-                                <ul className="list-disc list-inside text-sm text-gray-300 space-y-1">
-                                    {component.recommendedCircuits.map((circuit, index) => <li key={index}>{circuit}</li>)}
-                                </ul>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {projectsUsingComponent.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <h4 className="font-semibold text-gray-200 mb-2 mt-4">Used In Projects</h4>
-                        <div className="bg-gray-900/50 p-4 rounded-md border border-gray-700 space-y-2">
-                             {projectsUsingComponent.map(project => (
-                                <p key={project.id} className="text-sm text-gray-300">{project.name}</p>
+                        <h4 className="font-semibold text-gray-200 mb-2">Specifications</h4>
+                        <ul className="list-disc list-inside text-gray-400 space-y-1">
+                            {Object.entries(component.specs).map(([key, value]) => <li key={key}><strong>{key}:</strong> {value}</li>)}
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold text-gray-200 mb-2">Typical Uses</h4>
+                        <ul className="list-disc list-inside text-gray-400 space-y-1">
+                            {component.typicalUses?.map((use, i) => <li key={i}>{use}</li>)}
+                        </ul>
+                    </div>
+                </div>
+
+                 <div>
+                    <h4 className="font-semibold text-gray-200 mb-2">Inventory Levels</h4>
+                    <div className="space-y-2">
+                        {componentInventory.map(item => (
+                            <div key={item.locationId} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-md">
+                                <span className="text-gray-300">{findLocationById(item.locationId)?.name}</span>
+                                <input 
+                                    type="number" 
+                                    value={item.quantity} 
+                                    onChange={(e) => handleQuantityChange(item.locationId, e.target.value)}
+                                    className="input-style w-24 text-center py-1"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {projectsUsing.length > 0 && (
+                    <div>
+                        <h4 className="font-semibold text-gray-200 mb-2">Used In Projects</h4>
+                        <div className="space-y-2">
+                             {projectsUsing.map(p => (
+                                <div key={p.id} className="bg-gray-700/50 p-2 rounded-md">
+                                    <p className="font-semibold text-gray-200">{p.name}</p>
+                                    <p className="text-xs text-gray-400">{p.description}</p>
+                                </div>
                              ))}
                         </div>
                     </div>
                 )}
-
-                <div>
-                    <h4 className="font-semibold text-gray-200 mb-2 mt-4">Inventory Details:</h4>
-                    <div className="space-y-2">
-                        {inventoryForComponent.map(item => {
-                            const location = findLocationById(item.locationId);
-                            return (
-                                <div key={item.locationId} className="bg-gray-700/80 p-3 rounded-lg flex justify-between items-center">
-                                    <div>
-                                        <p className="font-semibold">{location?.name || 'Unknown Location'}</p>
-                                        <p className="text-sm text-gray-400">{location?.description}</p>
-                                    </div>
-                                    <QuantityEditor
-                                        value={item.quantity}
-                                        onChange={(newQuantity) => updateInventoryItem(item.componentId, item.locationId, newQuantity)}
-                                    />
-                                </div>
-                            );
-                        })}
-                    </div>
+               
+                <div className="pt-4 border-t border-gray-700 flex justify-between items-center">
+                   <button onClick={handleDelete} className="flex items-center gap-1 text-sm text-red-400 hover:text-red-300">
+                        <TrashIcon /> Delete Component
+                   </button>
+                    <SecondaryButton onClick={onClose}>Close</SecondaryButton>
                 </div>
-            </div>
-            <div className="mt-6 flex justify-end items-center">
-                <SecondaryButton onClick={onClose}>Close</SecondaryButton>
             </div>
         </Modal>
     );
@@ -352,133 +317,84 @@ export const AddComponentModal: React.FC<AddComponentModalProps> = ({ isOpen, on
     const { addComponent, addInventoryItem, locations } = useInventory();
     
     const [name, setName] = useState('');
-    const [category, setCategory] = useState('Passive');
+    const [category, setCategory] = useState('');
     const [description, setDescription] = useState('');
     const [tags, setTags] = useState('');
-    const [specs, setSpecs] = useState<{ key: string; value: string }[]>([{ key: '', value: '' }]);
+    const [specs, setSpecs] = useState('');
     const [quantity, setQuantity] = useState(1);
-    const [locationId, setLocationId] = useState<string>(locations[0]?.id || '');
-
-    const handleSpecChange = (index: number, field: 'key' | 'value', value: string) => {
-        const newSpecs = [...specs];
-        newSpecs[index][field] = value;
-        setSpecs(newSpecs);
-    };
-
-    const addSpecField = () => {
-        setSpecs([...specs, { key: '', value: '' }]);
-    };
-    
-    const removeSpecField = (index: number) => {
-        setSpecs(specs.filter((_, i) => i !== index));
-    };
-
-    const resetForm = () => {
-        setName('');
-        setCategory('Passive');
-        setDescription('');
-        setTags('');
-        setSpecs([{ key: '', value: '' }]);
-        setQuantity(1);
-        setLocationId(locations[0]?.id || '');
-    };
+    const [locationId, setLocationId] = useState(locations[0]?.id || '');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name || !category || !locationId) {
-            alert('Please fill out all required fields.');
-            return;
-        }
+        const newId = `comp-${Date.now()}`;
+        const specsObject = specs.split('\n').reduce((acc, line) => {
+            const [key, value] = line.split(':');
+            if (key && value) acc[key.trim()] = value.trim();
+            return acc;
+        }, {} as Record<string,string>);
 
         const newComponent: Component = {
-            id: `comp-${Date.now()}`,
+            id: newId,
             name,
             category,
             description,
-            tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
-            specs: specs.reduce((acc, spec) => {
-                if (spec.key) acc[spec.key] = spec.value;
-                return acc;
-            }, {} as Record<string, string>),
+            tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+            specs: specsObject,
         };
-        
+
         addComponent(newComponent);
         addInventoryItem({
-            componentId: newComponent.id,
+            componentId: newId,
             quantity: Number(quantity),
-            locationId,
+            locationId
         });
-
-        resetForm();
+        
+        // Reset form
+        setName('');
+        setCategory('');
+        setDescription('');
+        setTags('');
+        setSpecs('');
+        setQuantity(1);
+        setLocationId(locations[0]?.id || '');
         onClose();
     };
 
-
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Manually Add Component">
-            <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-                {/* Basic Info */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label htmlFor="comp-name" className="label-style">Component Name</label>
-                        <input id="comp-name" type="text" value={name} onChange={e => setName(e.target.value)} className="input-style py-2 px-3" placeholder="e.g., NE555 Timer IC" required />
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="label-style" htmlFor="comp-name">Component Name</label>
+                    <input id="comp-name" type="text" value={name} onChange={e => setName(e.target.value)} className="input-style" placeholder="e.g., ATmega328P" required />
+                </div>
+                <div>
+                    <label className="label-style" htmlFor="comp-cat">Category</label>
+                    <input id="comp-cat" type="text" value={category} onChange={e => setCategory(e.target.value)} className="input-style" placeholder="e.g., MCU" required />
+                </div>
+                <div>
+                    <label className="label-style" htmlFor="comp-desc">Description</label>
+                    <textarea id="comp-desc" value={description} onChange={e => setDescription(e.target.value)} className="input-style" rows={2}></textarea>
+                </div>
+                <div>
+                    <label className="label-style" htmlFor="comp-tags">Tags (comma-separated)</label>
+                    <input id="comp-tags" type="text" value={tags} onChange={e => setTags(e.target.value)} className="input-style" placeholder="e.g., arduino, microcontroller, dip" />
+                </div>
+                 <div>
+                    <label className="label-style" htmlFor="comp-specs">Specs (one per line, format: Key:Value)</label>
+                    <textarea id="comp-specs" value={specs} onChange={e => setSpecs(e.target.value)} className="input-style font-mono text-sm" rows={3} placeholder="Voltage: 5V&#10;Clock Speed: 16MHz"></textarea>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                     <div>
+                        <label className="label-style" htmlFor="comp-qty">Initial Quantity</label>
+                        <input id="comp-qty" type="number" min="1" value={quantity} onChange={e => setQuantity(Number(e.target.value))} className="input-style" required />
                     </div>
-                    <div>
-                        <label htmlFor="comp-cat" className="label-style">Category</label>
-                         <select id="comp-cat" value={category} onChange={e => setCategory(e.target.value)} className="input-style py-2 px-3">
-                            <option>Passive</option>
-                            <option>IC</option>
-                            <option>MCU</option>
-                            <option>Sensor</option>
-                            <option>Module</option>
-                            <option>Connector</option>
-                            <option>Mechanical</option>
+                     <div>
+                        <label className="label-style" htmlFor="comp-loc">Location</label>
+                        <select id="comp-loc" value={locationId} onChange={e => setLocationId(e.target.value)} className="input-style h-full" required>
+                             {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
                         </select>
                     </div>
                 </div>
-                 <div>
-                    <label htmlFor="comp-desc" className="label-style">Description</label>
-                    <textarea id="comp-desc" value={description} onChange={e => setDescription(e.target.value)} className="input-style py-2 px-3" rows={2} placeholder="e.g., A versatile precision timing device"></textarea>
-                </div>
-                <div>
-                    <label htmlFor="comp-tags" className="label-style">Tags (comma-separated)</label>
-                    <input id="comp-tags" type="text" value={tags} onChange={e => setTags(e.target.value)} className="input-style py-2 px-3" placeholder="e.g., timer, oscillator, pulse" />
-                </div>
-                
-                {/* Specifications */}
-                <div>
-                    <h4 className="label-style mb-2">Specifications</h4>
-                    <div className="space-y-2">
-                    {specs.map((spec, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                            <input type="text" value={spec.key} onChange={e => handleSpecChange(index, 'key', e.target.value)} className="input-style py-2 px-3" placeholder="Key (e.g., Voltage)" />
-                            <input type="text" value={spec.value} onChange={e => handleSpecChange(index, 'value', e.target.value)} className="input-style py-2 px-3" placeholder="Value (e.g., 5-15V)" />
-                            <button type="button" onClick={() => removeSpecField(index)} className="p-2 text-gray-400 hover:text-red-500">
-                                <TrashIcon />
-                            </button>
-                        </div>
-                    ))}
-                    </div>
-                    <Button type="button" onClick={addSpecField} className="mt-2 !py-1 !px-3 !text-sm">Add Specification</Button>
-                </div>
-
-                {/* Initial Inventory */}
-                <div className="border-t border-gray-700 pt-4">
-                     <h4 className="label-style mb-2">Initial Stock</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                             <label htmlFor="comp-qty" className="label-style">Quantity</label>
-                             <input id="comp-qty" type="number" min="1" value={quantity} onChange={e => setQuantity(Number(e.target.value))} className="input-style py-2 px-3" required />
-                        </div>
-                        <div>
-                             <label htmlFor="comp-loc" className="label-style">Location</label>
-                             <select id="comp-loc" value={locationId} onChange={e => setLocationId(e.target.value)} className="input-style py-2 px-3" required>
-                                {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
-                             </select>
-                        </div>
-                    </div>
-                </div>
-
                 <div className="flex justify-end gap-4 pt-4">
                     <SecondaryButton type="button" onClick={onClose}>Cancel</SecondaryButton>
                     <Button type="submit">Add Component</Button>
@@ -488,125 +404,92 @@ export const AddComponentModal: React.FC<AddComponentModalProps> = ({ isOpen, on
     );
 };
 
-
 interface AddProjectModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClose }) => {
-    const { addProject, components: allComponents } = useInventory();
-    
+    const { addProject, components } = useInventory();
+
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [projectComponents, setProjectComponents] = useState<ProjectComponent[]>([]);
-    const [searchTerm, setSearchTerm] = useState('');
     
-    const availableComponents = allComponents.filter(c => 
-        !projectComponents.some(pc => pc.componentId === c.id) &&
-        c.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const [selectedComponentId, setSelectedComponentId] = useState('');
+    const [selectedQuantity, setSelectedQuantity] = useState(1);
 
-    const addComponentToProject = (componentId: string) => {
-        setProjectComponents([...projectComponents, { componentId, quantity: 1 }]);
-        setSearchTerm('');
+    const handleAddComponent = () => {
+        if (selectedComponentId && selectedQuantity > 0 && !projectComponents.some(c => c.componentId === selectedComponentId)) {
+            setProjectComponents([...projectComponents, { componentId: selectedComponentId, quantity: selectedQuantity }]);
+            setSelectedComponentId('');
+            setSelectedQuantity(1);
+        }
     };
     
-    const removeComponentFromProject = (componentId: string) => {
-        setProjectComponents(projectComponents.filter(pc => pc.componentId !== componentId));
-    };
-
-    const updateComponentQuantity = (componentId: string, quantity: number) => {
-        const newQuantity = Math.max(1, quantity);
-        setProjectComponents(
-            projectComponents.map(pc => pc.componentId === componentId ? { ...pc, quantity: newQuantity } : pc)
-        );
-    };
-
-    const resetForm = () => {
-        setName('');
-        setDescription('');
-        setProjectComponents([]);
-        setSearchTerm('');
+    const handleRemoveComponent = (componentId: string) => {
+        setProjectComponents(projectComponents.filter(c => c.componentId !== componentId));
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!name) {
-            alert('Please enter a project name.');
-            return;
-        }
         addProject({ name, description, components: projectComponents });
-        resetForm();
+        setName('');
+        setDescription('');
+        setProjectComponents([]);
         onClose();
     };
 
-
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Create New Project">
-            <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+        <Modal isOpen={isOpen} onClose={onClose} title="Create New Project" size="lg">
+            <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label htmlFor="proj-name" className="label-style">Project Name</label>
-                    <input id="proj-name" type="text" value={name} onChange={e => setName(e.target.value)} className="input-style py-2 px-3" placeholder="e.g., Automated Plant Waterer" required />
+                    <label className="label-style" htmlFor="proj-name">Project Name</label>
+                    <input id="proj-name" type="text" value={name} onChange={e => setName(e.target.value)} className="input-style" required />
                 </div>
-                 <div>
-                    <label htmlFor="proj-desc" className="label-style">Description</label>
-                    <textarea id="proj-desc" value={description} onChange={e => setDescription(e.target.value)} className="input-style py-2 px-3" rows={2} placeholder="A short summary of what the project does"></textarea>
+                <div>
+                    <label className="label-style" htmlFor="proj-desc">Description</label>
+                    <textarea id="proj-desc" value={description} onChange={e => setDescription(e.target.value)} className="input-style" rows={3}></textarea>
                 </div>
                 
-                <div>
-                    <h4 className="label-style mb-2">Components</h4>
-                    <div className="space-y-2">
-                        {projectComponents.map(pc => {
-                            const component = allComponents.find(c => c.id === pc.componentId);
-                            if (!component) return null;
-                            return (
-                                <div key={pc.componentId} className="flex items-center justify-between gap-2 bg-gray-700 p-2 rounded-md">
-                                    <span className="truncate">{component.name}</span>
-                                    <div className="flex items-center gap-2">
-                                        <input 
-                                            type="number" 
-                                            min="1" 
-                                            value={pc.quantity} 
-                                            onChange={e => updateComponentQuantity(pc.componentId, Number(e.target.value))} 
-                                            className="input-style !w-16 text-center py-1"
-                                        />
-                                        <button type="button" onClick={() => removeComponentFromProject(pc.componentId)} className="p-1 text-gray-400 hover:text-red-500">
+                <div className="space-y-2">
+                    <h4 className="font-semibold text-gray-200">Required Components</h4>
+                    {projectComponents.length > 0 && (
+                        <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
+                            {projectComponents.map(pc => {
+                                const component = components.find(c => c.id === pc.componentId);
+                                return (
+                                    <div key={pc.componentId} className="flex justify-between items-center bg-gray-700/50 p-2 rounded-md text-sm">
+                                        <span>{pc.quantity}x {component?.name || 'Unknown'}</span>
+                                        <button type="button" onClick={() => handleRemoveComponent(pc.componentId)} className="text-red-400 hover:text-red-300">
                                             <TrashIcon />
                                         </button>
                                     </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                    
-                    <div className="relative mt-2">
-                        <input 
-                            type="text"
-                            value={searchTerm}
-                            onChange={e => setSearchTerm(e.target.value)}
-                            className="input-style py-2 px-3"
-                            placeholder="Add component from inventory..."
-                        />
-                        {searchTerm && availableComponents.length > 0 && (
-                             <ul className="absolute z-10 w-full bg-gray-700 border border-gray-600 rounded-md mt-1 max-h-40 overflow-y-auto">
-                                {availableComponents.map(c => (
-                                    <li 
-                                        key={c.id} 
-                                        onClick={() => addComponentToProject(c.id)}
-                                        className="px-3 py-2 hover:bg-teal-600 cursor-pointer"
-                                    >
-                                        {c.name}
-                                    </li>
-                                ))}
-                             </ul>
-                        )}
+                                );
+                            })}
+                        </div>
+                    )}
+                    <div className="flex items-end gap-2 p-2 bg-gray-900/50 rounded-md">
+                        <div className="flex-grow">
+                            <label className="label-style text-xs" htmlFor="select-comp">Component</label>
+                            <select id="select-comp" value={selectedComponentId} onChange={e => setSelectedComponentId(e.target.value)} className="input-style py-1 text-sm">
+                                <option value="" disabled>Select a component...</option>
+                                {components.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            </select>
+                        </div>
+                        <div className="w-20">
+                            <label className="label-style text-xs" htmlFor="select-qty">Qty</label>
+                            <input id="select-qty" type="number" min="1" value={selectedQuantity} onChange={e => setSelectedQuantity(Number(e.target.value))} className="input-style py-1 text-sm" />
+                        </div>
+                        <SecondaryButton type="button" onClick={handleAddComponent} className="h-full !px-3" disabled={!selectedComponentId}>
+                            <PlusIcon />
+                        </SecondaryButton>
                     </div>
                 </div>
 
                 <div className="flex justify-end gap-4 pt-4">
                     <SecondaryButton type="button" onClick={onClose}>Cancel</SecondaryButton>
-                    <Button type="submit">Create Project</Button>
+                    <Button type="submit" disabled={!name || projectComponents.length === 0}>Create Project</Button>
                 </div>
             </form>
         </Modal>

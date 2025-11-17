@@ -1,7 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-// Fix: Added Location to the import to resolve type ambiguity with the global Location object.
-import { Component, InventoryItem, Location } from './types';
+import { Component, InventoryItem, Location as LocationType } from './types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
@@ -89,7 +88,7 @@ export const identifyComponent = async (imageFile: File | null, manualInput: str
     }
 };
 
-export const getProjectIdeas = async (inventory: (InventoryItem & { component: Component; location: Location })[]) => {
+export const getProjectIdeas = async (inventory: (InventoryItem & { component: Component; location: LocationType })[]) => {
     const model = 'gemini-2.5-pro';
     const availableComponents = inventory.map(item => ({ name: item.component.name, quantity: item.quantity }));
     

@@ -1,26 +1,26 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo, ReactNode } from 'react';
-import { InventoryItem, Component, Location, Project } from './types';
+import { InventoryItem, Component, Location as LocationType, Project } from './types';
 
 interface InventoryContextType {
   components: Component[];
   inventory: InventoryItem[];
-  locations: Location[];
+  locations: LocationType[];
   projects: Project[];
   addComponent: (component: Component) => void;
   deleteComponent: (componentId: string) => void;
   addInventoryItem: (item: Omit<InventoryItem, 'id'>) => void;
   updateInventoryItem: (componentId: string, locationId: string, quantity: number) => void;
-  addLocation: (location: Omit<Location, 'id'>) => void;
+  addLocation: (location: Omit<LocationType, 'id'>) => void;
   addProject: (project: Omit<Project, 'id'>) => void;
   findComponentById: (id: string) => Component | undefined;
-  findLocationById: (id: string) => Location | undefined;
-  getInventoryWithDetails: () => (InventoryItem & { component: Component; location: Location })[];
+  findLocationById: (id: string) => LocationType | undefined;
+  getInventoryWithDetails: () => (InventoryItem & { component: Component; location: LocationType })[];
   getProjectsForComponent: (componentId: string) => Project[];
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
 
-const initialLocations: Location[] = [
+const initialLocations: LocationType[] = [
     { id: 'loc-1', name: 'Main Drawer Unit', description: 'The big blue tower of drawers.' },
     { id: 'loc-2', name: 'Resistor Box', description: 'The box with resistor strips.' },
     { id: 'loc-3', name: 'IC Tray', description: 'Anti-static foam for integrated circuits.' },
@@ -68,23 +68,43 @@ const initialProjects: Project[] = [
 
 export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [components, setComponents] = useState<Component[]>(() => {
-    const saved = localStorage.getItem('ws_components');
-    return saved ? JSON.parse(saved) : initialComponents;
+    try {
+      const saved = localStorage.getItem('ws_components');
+      return saved ? JSON.parse(saved) : initialComponents;
+    } catch (error) {
+      console.error("Failed to parse components from localStorage", error);
+      return initialComponents;
+    }
   });
 
   const [inventory, setInventory] = useState<InventoryItem[]>(() => {
-    const saved = localStorage.getItem('ws_inventory');
-    return saved ? JSON.parse(saved) : initialInventory;
+    try {
+      const saved = localStorage.getItem('ws_inventory');
+      return saved ? JSON.parse(saved) : initialInventory;
+    } catch (error) {
+      console.error("Failed to parse inventory from localStorage", error);
+      return initialInventory;
+    }
   });
 
-  const [locations, setLocations] = useState<Location[]>(() => {
-    const saved = localStorage.getItem('ws_locations');
-    return saved ? JSON.parse(saved) : initialLocations;
+  const [locations, setLocations] = useState<LocationType[]>(() => {
+    try {
+      const saved = localStorage.getItem('ws_locations');
+      return saved ? JSON.parse(saved) : initialLocations;
+    } catch (error) {
+      console.error("Failed to parse locations from localStorage", error);
+      return initialLocations;
+    }
   });
 
   const [projects, setProjects] = useState<Project[]>(() => {
-    const saved = localStorage.getItem('ws_projects');
-    return saved ? JSON.parse(saved) : initialProjects;
+    try {
+      const saved = localStorage.getItem('ws_projects');
+      return saved ? JSON.parse(saved) : initialProjects;
+    } catch (error) {
+      console.error("Failed to parse projects from localStorage", error);
+      return initialProjects;
+    }
   });
 
   useEffect(() => {
@@ -140,7 +160,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
         });
     }, []);
 
-  const addLocation = useCallback((location: Omit<Location, 'id'>) => {
+  const addLocation = useCallback((location: Omit<LocationType, 'id'>) => {
     const newLocation = { ...location, id: `loc-${Date.now()}` };
     setLocations(prev => [...prev, newLocation]);
   }, []);
@@ -163,7 +183,7 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
             }
             return null;
         })
-        .filter((item): item is InventoryItem & { component: Component; location: Location } => item !== null);
+        .filter((item): item is InventoryItem & { component: Component; location: LocationType } => item !== null);
   }, [inventory, findComponentById, findLocationById]);
 
   const getProjectsForComponent = useCallback((componentId: string) => {
