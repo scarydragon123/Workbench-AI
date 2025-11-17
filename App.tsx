@@ -6,7 +6,7 @@ import { auth } from './firebase';
 // import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { Component, View, ProjectSuggestion, Location as LocationType } from './types';
 import { identifyComponent, getProjectIdeas, askAboutComponent } from './services';
-import { Button, SecondaryButton, ScanIcon, InventoryIcon, ProjectsIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard, ProjectDetailModal, SettingsIcon } from './components';
+import { Button, SecondaryButton, CameraIcon, LightbulbIcon, InventoryIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard, ProjectDetailModal, SettingsIcon } from './components';
 import { useTheme } from './theme';
 
 // --- ICONS ---
@@ -187,8 +187,8 @@ const IdentifyView: React.FC = () => {
                 {component.imageUrl ? (
                   <img src={component.imageUrl} alt={component.name} className="w-12 h-12 object-cover rounded-md bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
                 ) : (
-                  <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center flex-shrink-0">
-                      <ScanIcon />
+                  <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center flex-shrink-0 text-gray-400">
+                      <CameraIcon />
                   </div>
                 )}
                 <div className="overflow-hidden">
@@ -435,9 +435,9 @@ const ProjectIdeasView: React.FC = () => {
             )}
 
             {projects.length === 0 && !isLoading && !error && (
-                <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg">
-                    <ProjectsIcon />
-                    <h2 className="mt-2 text-xl font-semibold">Ready to build something?</h2>
+                <div className="text-center py-16 px-6 bg-white dark:bg-gray-800 rounded-lg text-gray-500">
+                    <LightbulbIcon />
+                    <h2 className="mt-2 text-xl font-semibold text-gray-700 dark:text-gray-300">Ready to build something?</h2>
                     <p className="mt-1 text-gray-500 dark:text-gray-400">Click the button to get project ideas based on your current inventory.</p>
                 </div>
             )}
@@ -688,9 +688,9 @@ interface NavProps {
 }
 
 const navItems = [
-  { view: View.IDENTIFY, icon: <ScanIcon />, label: 'Identify' },
+  { view: View.IDENTIFY, icon: <CameraIcon />, label: 'Identify' },
   { view: View.INVENTORY, icon: <InventoryIcon />, label: 'Inventory' },
-  { view: View.IDEAS, icon: <ProjectsIcon />, label: 'Ideas' },
+  { view: View.IDEAS, icon: <LightbulbIcon />, label: 'Ideas' },
   { view: View.MY_PROJECTS, icon: <ClipboardListIcon />, label: 'My Projects' },
   { view: View.LOCATIONS, icon: <LocationIcon />, label: 'Locations' },
   { view: View.SETTINGS, icon: <SettingsIcon />, label: 'Settings' },
