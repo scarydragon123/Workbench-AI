@@ -13,13 +13,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <script>
-      // Polyfill for process.env.API_KEY to prevent crash on static hosting.
-      // IMPORTANT: You must replace 'YOUR_API_KEY_HERE' with your actual Google AI API key for the app to function.
-      window.process = {
-        env: {
-          API_KEY: 'AIzaSyBIzAXjKs5Vi5GniS_1gDPppJSW7PxVl6w'
-        }
-      };
+      // This script sets the Google AI API key for the application.
+      // It's placed in the head to ensure it's available before any other script runs.
+      window.GOOGLE_API_KEY = 'AIzaSyBIzAXjKs5Vi5GniS_1gDPppJSW7PxVl6w';
     </script>
 
     <!-- Polyfill for import maps for browsers like older Safari -->
