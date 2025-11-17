@@ -1,9 +1,10 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { useInventory } from './context';
 import { useAuth } from './auth';
 import { auth } from './firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+// Fix: Removed Firebase v9 modular imports for auth functions.
 import { Component, View, ProjectSuggestion, Location as LocationType } from './types';
 import { identifyComponent, getProjectIdeas, askAboutComponent } from './services';
 import { Button, SecondaryButton, CameraIcon, InventoryIcon, LightbulbIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard, ProjectDetailModal, SettingsIcon } from './components';
@@ -631,9 +632,11 @@ const LoginView: React.FC = () => {
     setError('');
     try {
       if (isSignUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        // Fix: Use Firebase v8 syntax for creating a user.
+        await auth.createUserWithEmailAndPassword(email, password);
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        // Fix: Use Firebase v8 syntax for signing in.
+        await auth.signInWithEmailAndPassword(email, password);
       }
     } catch (err: any) {
       setError(err.message);
@@ -678,7 +681,8 @@ const LoginView: React.FC = () => {
 const SettingsView: React.FC<{ theme: Theme, setTheme: (theme: Theme) => void }> = ({ theme, setTheme }) => {
     const { currentUser } = useAuth();
     const handleSignOut = () => {
-        signOut(auth);
+        // Fix: Use Firebase v8 syntax for signing out.
+        auth.signOut();
     };
 
     const toggleTheme = () => {
