@@ -3,13 +3,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Component, InventoryItem, Location as LocationType } from './types';
 
-// Access the API key from the window object, which is set in index.html.
-// This is a more robust method for browser environments than using a process.env polyfill.
-const apiKey = (window as any).GOOGLE_API_KEY;
-if (!apiKey) {
-  throw new Error("Google AI API key not found. Please make sure `window.GOOGLE_API_KEY` is set in index.html.");
-}
-const ai = new GoogleGenAI({ apiKey });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 function fileToGenerativePart(file: File) {
   return new Promise((resolve, reject) => {
