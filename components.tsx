@@ -1,7 +1,8 @@
 
+
 import React, { ReactNode, useState, useRef, useEffect } from 'react';
-import { Component, Location as LocationType, ProjectSuggestion, InventoryItem, Project, ProjectComponent } from './types';
-import { useInventory } from './context';
+import { Component, Location as LocationType, ProjectSuggestion, InventoryItem, Project, ProjectComponent } from './types.ts';
+import { useInventory } from './context.tsx';
 
 // --- Icons ---
 const iconProps = {
@@ -19,6 +20,7 @@ export const InventoryIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/
 export const ProjectsIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.211 1.002l-4.254 5.956a2.25 2.25 0 00.21 3.002l4.254 2.968a2.25 2.25 0 003.002-.21l5.956-4.254a2.25 2.25 0 001.002-.211v-5.714a2.25 2.25 0 00-2.25-2.25H12a2.25 2.25 0 00-2.25 2.25z" /></svg>;
 export const LocationIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>;
 export const ClipboardListIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>;
+export const SettingsIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-1.007 1.11-1.226M10.343 3.94a2.25 2.25 0 01-2.25 2.25c-.583 0-1.11-.29-1.428-.733M10.343 3.94c.542-.09 1.007-.56 1.226-1.11M14.057 20.06c-.09.542-.56 1.007-1.11 1.226m1.11-1.226a2.25 2.25 0 002.25-2.25c.583 0 1.11.29 1.428.733m-2.539-1.488c-.542.09-1.007.56-1.226 1.11M3.94 10.343c-.542-.09-1.007-.56-1.226-1.11M3.94 10.343a2.25 2.25 0 012.25-2.25c0 .583.29 1.11.733 1.428M3.94 10.343c.09.542.56 1.007 1.11 1.226m14.88-2.539c.542.09 1.007.56 1.226 1.11m-1.226-1.11a2.25 2.25 0 00-2.25 2.25c0-.583-.29-1.11-.733-1.428m2.539 1.488c-.09-.542-.56-1.007-1.11-1.226m-14.88 2.539c-.542-.09-1.007-.56-1.226-1.11m1.226 1.11a2.25 2.25 0 01-2.25-2.25c0 .583.29 1.11.733 1.428m-2.539-1.488c.09.542.56 1.007 1.11 1.226m12.332-12.332a2.25 2.25 0 00-2.25-2.25c-.583 0-1.11.29-1.428.733m2.539 1.488c.542-.09 1.007-.56 1.226-1.11M9.94 14.057c.542.09 1.007.56 1.226 1.11m-1.226-1.11a2.25 2.25 0 01-2.25 2.25c0-.583.29 1.11.733-1.428m-2.539-1.488c.09-.542.56-1.007-1.11-1.226M12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" /></svg>;
 export const SearchIcon = () => <svg {...smallIconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>;
 const XIcon = () => <svg {...iconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>;
 const TrashIcon = () => <svg {...smallIconProps} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.124-2.033-2.124H8.033c-1.12 0-2.033.944-2.033 2.124v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>;
@@ -31,7 +33,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Button: React.FC<ButtonProps> = ({ children, className = '', ...props }) => (
   <button
-    className={`bg-teal-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-opacity-75 transition-all disabled:bg-gray-600 disabled:cursor-not-allowed ${className}`}
+    className={`bg-accent-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-accent-600 focus:outline-none focus:ring-2 focus:ring-accent-400 focus:ring-opacity-75 transition-all disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed ${className}`}
     {...props}
   >
     {children}
@@ -40,7 +42,7 @@ export const Button: React.FC<ButtonProps> = ({ children, className = '', ...pro
 
 export const SecondaryButton: React.FC<ButtonProps> = ({ children, className = '', ...props }) => (
     <button
-      className={`bg-gray-700 text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all disabled:bg-gray-800 disabled:cursor-not-allowed ${className}`}
+      className={`bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-all disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed ${className}`}
       {...props}
     >
       {children}
@@ -80,12 +82,12 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
     <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center p-4 animate-fade-in" onClick={onClose} role="dialog" aria-modal="true">
       <div 
         ref={modalRef}
-        className={`bg-gray-800 rounded-lg shadow-xl w-full ${sizeClasses[size]} overflow-hidden animate-scale-in`}
+        className={`bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full ${sizeClasses[size]} overflow-hidden animate-scale-in`}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-between items-center p-4 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-teal-400">{title}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors" aria-label="Close modal"><XIcon /></button>
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-accent-400">{title}</h2>
+          <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors" aria-label="Close modal"><XIcon /></button>
         </div>
         <div className="p-6 max-h-[80vh] overflow-y-auto">
           {children}
@@ -105,19 +107,19 @@ interface ComponentCardProps {
 
 export const ComponentCard: React.FC<ComponentCardProps> = ({ component, quantity, location, onClick }) => (
     <div 
-        className="bg-gray-800 p-4 rounded-lg border border-gray-700 hover:border-teal-500 cursor-pointer transition-all group"
+        className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-accent-500 cursor-pointer transition-all group"
         onClick={onClick}
     >
-        <h3 className="font-bold text-lg text-gray-100 truncate group-hover:text-teal-400">{component.name}</h3>
-        <p className="text-sm text-gray-400">{component.category}</p>
+        <h3 className="font-bold text-lg text-gray-800 dark:text-gray-100 truncate group-hover:text-accent-400">{component.name}</h3>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{component.category}</p>
         <div className="mt-4 flex justify-between items-end">
             <div>
-                <p className="text-xs text-gray-500">Location</p>
-                <p className="font-semibold text-gray-300">{location.name}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Location</p>
+                <p className="font-semibold text-gray-600 dark:text-gray-300">{location.name}</p>
             </div>
             <div>
-                <p className="text-xs text-gray-500">Quantity</p>
-                <p className="font-bold text-2xl text-teal-400">{quantity}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Quantity</p>
+                <p className="font-bold text-2xl text-accent-400">{quantity}</p>
             </div>
         </div>
     </div>
@@ -130,30 +132,30 @@ interface ProjectCardProps {
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onClick }) => (
     <div 
-        className="bg-gray-800 p-4 rounded-lg border border-gray-700 flex flex-col h-full hover:border-teal-500 cursor-pointer transition-colors"
+        className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col h-full hover:border-accent-500 cursor-pointer transition-colors"
         onClick={onClick}
     >
-        <h3 className="font-bold text-lg text-teal-400">{project.name}</h3>
+        <h3 className="font-bold text-lg text-accent-400">{project.name}</h3>
         <div className="flex items-center gap-2 my-1">
-            <span className="text-xs font-semibold text-gray-300">Difficulty:</span>
+            <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Difficulty:</span>
             <div className="flex gap-1">
                 {[...Array(5)].map((_, i) => (
-                    <div key={i} className={`w-3 h-3 rounded-full ${i < project.difficulty ? 'bg-teal-500' : 'bg-gray-600'}`}></div>
+                    <div key={i} className={`w-3 h-3 rounded-full ${i < project.difficulty ? 'bg-accent-500' : 'bg-gray-400 dark:bg-gray-600'}`}></div>
                 ))}
             </div>
         </div>
-        <p className="text-sm text-gray-400 flex-grow">{project.description}</p>
+        <p className="text-sm text-gray-600 dark:text-gray-400 flex-grow">{project.description}</p>
         <div className="mt-4">
-            <h4 className="font-semibold text-sm text-gray-200 mb-2">Required Components:</h4>
+            <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-200 mb-2">Required Components:</h4>
             <ul className="space-y-1 text-sm">
                 {project.components.map((c, i) => (
                     <li key={i} className="flex justify-between items-center">
-                        <span className={`truncate ${c.available ? 'text-gray-300' : 'text-red-400'}`}>
+                        <span className={`truncate ${c.available ? 'text-gray-600 dark:text-gray-300' : 'text-red-500 dark:text-red-400'}`}>
                            {c.quantity}x {c.name}
                         </span>
                         {c.available ? 
-                            <span className="text-xs bg-green-900/50 text-green-300 px-2 py-0.5 rounded-full">Available</span> : 
-                            <span className="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded-full">Missing</span>}
+                            <span className="text-xs bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">Available</span> : 
+                            <span className="text-xs bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full">Missing</span>}
                     </li>
                 ))}
             </ul>
@@ -178,17 +180,17 @@ export const ProjectManagementCard: React.FC<ProjectManagementCardProps> = ({ pr
     const availabilityRatio = totalRequired > 0 ? availableCount / totalRequired : 1;
 
     return (
-        <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 flex flex-col h-full">
-            <h3 className="font-bold text-lg text-teal-400">{project.name}</h3>
-            <p className="text-sm text-gray-400 flex-grow mt-1 mb-4">{project.description}</p>
+        <div className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 flex flex-col h-full">
+            <h3 className="font-bold text-lg text-accent-400">{project.name}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 flex-grow mt-1 mb-4">{project.description}</p>
             
             <div>
                 <div className="flex justify-between items-center mb-1">
-                    <h4 className="font-semibold text-sm text-gray-200">Bill of Materials</h4>
-                    <span className="text-xs text-gray-400">{availableCount} of {totalRequired} components available</span>
+                    <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-200">Bill of Materials</h4>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{availableCount} of {totalRequired} components available</span>
                 </div>
-                <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
-                    <div className="bg-teal-500 h-2 rounded-full" style={{ width: `${availabilityRatio * 100}%` }}></div>
+                <div className="w-full bg-gray-300 dark:bg-gray-700 rounded-full h-2 mb-2">
+                    <div className="bg-accent-500 h-2 rounded-full" style={{ width: `${availabilityRatio * 100}%` }}></div>
                 </div>
                 <ul className="space-y-1 text-sm max-h-32 overflow-y-auto pr-2">
                     {project.components.map((c, i) => {
@@ -198,9 +200,9 @@ export const ProjectManagementCard: React.FC<ProjectManagementCardProps> = ({ pr
                             .reduce((sum, item) => sum + item.quantity, 0);
                          const isAvailable = totalAvailable >= c.quantity;
                          return (
-                            <li key={i} className="flex justify-between items-center text-gray-300">
+                            <li key={i} className="flex justify-between items-center text-gray-700 dark:text-gray-300">
                                 <span className="truncate">{c.quantity}x {component?.name || 'Unknown'}</span>
-                                <span className={`font-mono text-xs ${isAvailable ? 'text-green-400' : 'text-red-400'}`}>
+                                <span className={`font-mono text-xs ${isAvailable ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
                                     {totalAvailable}/{c.quantity}
                                 </span>
                             </li>
@@ -244,38 +246,38 @@ export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ isOp
         <Modal isOpen={isOpen} onClose={onClose} title="Component Details" size="xl">
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row gap-6">
-                    {component.imageUrl && <img src={component.imageUrl} alt={component.name} className="w-full md:w-48 h-48 object-cover rounded-lg bg-gray-700" />}
+                    {component.imageUrl && <img src={component.imageUrl} alt={component.name} className="w-full md:w-48 h-48 object-cover rounded-lg bg-gray-300 dark:bg-gray-700" />}
                     <div className="flex-1">
-                        <h3 className="text-2xl font-bold text-gray-100">{component.name}</h3>
-                        <p className="text-md text-gray-400 mb-2">{component.category}</p>
-                        <p className="text-gray-300 mb-4">{component.description}</p>
+                        <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{component.name}</h3>
+                        <p className="text-md text-gray-500 dark:text-gray-400 mb-2">{component.category}</p>
+                        <p className="text-gray-700 dark:text-gray-300 mb-4">{component.description}</p>
                          <div className="flex flex-wrap gap-2">
-                            {component.tags.map(tag => <span key={tag} className="bg-gray-700 text-teal-300 text-xs font-semibold px-2 py-1 rounded-full">{tag}</span>)}
+                            {component.tags.map(tag => <span key={tag} className="bg-gray-200 dark:bg-gray-700 text-accent-600 dark:text-accent-300 text-xs font-semibold px-2 py-1 rounded-full">{tag}</span>)}
                         </div>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <h4 className="font-semibold text-gray-200 mb-2">Specifications</h4>
-                        <ul className="list-disc list-inside text-gray-400 space-y-1">
+                        <h4 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Specifications</h4>
+                        <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1">
                             {Object.entries(component.specs).map(([key, value]) => <li key={key}><strong>{key}:</strong> {value}</li>)}
                         </ul>
                     </div>
                      <div>
-                        <h4 className="font-semibold text-gray-200 mb-2">Typical Uses</h4>
-                        <ul className="list-disc list-inside text-gray-400 space-y-1">
+                        <h4 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Typical Uses</h4>
+                        <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1">
                             {component.typicalUses?.map((use, i) => <li key={i}>{use}</li>)}
                         </ul>
                     </div>
                 </div>
 
                  <div>
-                    <h4 className="font-semibold text-gray-200 mb-2">Inventory Levels</h4>
+                    <h4 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Inventory Levels</h4>
                     <div className="space-y-2">
                         {componentInventory.map(item => (
-                            <div key={item.locationId} className="flex items-center justify-between bg-gray-700/50 p-2 rounded-md">
-                                <span className="text-gray-300">{findLocationById(item.locationId)?.name}</span>
+                            <div key={item.locationId} className="flex items-center justify-between bg-gray-100 dark:bg-gray-700/50 p-2 rounded-md">
+                                <span className="text-gray-800 dark:text-gray-300">{findLocationById(item.locationId)?.name}</span>
                                 <input 
                                     type="number" 
                                     value={item.quantity} 
@@ -289,20 +291,20 @@ export const ComponentDetailModal: React.FC<ComponentDetailModalProps> = ({ isOp
 
                 {projectsUsing.length > 0 && (
                     <div>
-                        <h4 className="font-semibold text-gray-200 mb-2">Used In Projects</h4>
+                        <h4 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Used In Projects</h4>
                         <div className="space-y-2">
                              {projectsUsing.map(p => (
-                                <div key={p.id} className="bg-gray-700/50 p-2 rounded-md">
-                                    <p className="font-semibold text-gray-200">{p.name}</p>
-                                    <p className="text-xs text-gray-400">{p.description}</p>
+                                <div key={p.id} className="bg-gray-100 dark:bg-gray-700/50 p-2 rounded-md">
+                                    <p className="font-semibold text-gray-800 dark:text-gray-200">{p.name}</p>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">{p.description}</p>
                                 </div>
                              ))}
                         </div>
                     </div>
                 )}
                
-                <div className="pt-4 border-t border-gray-700 flex justify-between items-center">
-                   <button onClick={handleDelete} className="flex items-center gap-1 text-sm text-red-400 hover:text-red-300">
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                   <button onClick={handleDelete} className="flex items-center gap-1 text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">
                         <TrashIcon /> Delete Component
                    </button>
                     <SecondaryButton onClick={onClose}>Close</SecondaryButton>
@@ -349,35 +351,35 @@ export const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({ isOpen, 
         <Modal isOpen={isOpen} onClose={onClose} title="Project Details" size="lg">
             <div className="space-y-6">
                 <div>
-                    <h3 className="text-2xl font-bold text-gray-100">{project.name}</h3>
+                    <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100">{project.name}</h3>
                     <div className="flex items-center gap-2 my-2">
-                        <span className="text-sm font-semibold text-gray-300">Difficulty:</span>
+                        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Difficulty:</span>
                         <div className="flex gap-1">
                             {[...Array(5)].map((_, i) => (
-                                <div key={i} className={`w-4 h-4 rounded-full ${i < project.difficulty ? 'bg-teal-500' : 'bg-gray-600'}`}></div>
+                                <div key={i} className={`w-4 h-4 rounded-full ${i < project.difficulty ? 'bg-accent-500' : 'bg-gray-400 dark:bg-gray-600'}`}></div>
                             ))}
                         </div>
                     </div>
-                    <p className="text-gray-300">{project.description}</p>
+                    <p className="text-gray-700 dark:text-gray-300">{project.description}</p>
                 </div>
                 
                 <div>
-                    <h4 className="font-semibold text-gray-200 mb-2">Required Components</h4>
+                    <h4 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Required Components</h4>
                     <ul className="space-y-2 text-sm max-h-60 overflow-y-auto pr-2">
                         {project.components.map((c, i) => (
-                            <li key={i} className="flex justify-between items-center bg-gray-700/50 p-2 rounded-md">
-                                <span className={`truncate ${c.available ? 'text-gray-300' : 'text-red-400'}`}>
+                            <li key={i} className="flex justify-between items-center bg-gray-100 dark:bg-gray-700/50 p-2 rounded-md">
+                                <span className={`truncate ${c.available ? 'text-gray-700 dark:text-gray-300' : 'text-red-500 dark:text-red-400'}`}>
                                    {c.quantity}x {c.name}
                                 </span>
                                 {c.available ? 
-                                    <span className="text-xs bg-green-900/50 text-green-300 px-2 py-0.5 rounded-full">Available</span> : 
-                                    <span className="text-xs bg-red-900/50 text-red-300 px-2 py-0.5 rounded-full">Missing</span>}
+                                    <span className="text-xs bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">Available</span> : 
+                                    <span className="text-xs bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-full">Missing</span>}
                             </li>
                         ))}
                     </ul>
                 </div>
                 
-                <div className="pt-4 border-t border-gray-700 flex justify-end gap-4">
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-4">
                     <SecondaryButton onClick={onClose}>Close</SecondaryButton>
                     <Button onClick={handleCreateProject} disabled={projectExists} title={projectExists ? 'This project is already in your list' : ''}>
                         {projectExists ? 'Project Exists' : 'Create Project'}
@@ -540,15 +542,15 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
                 </div>
                 
                 <div className="space-y-2">
-                    <h4 className="font-semibold text-gray-200">Required Components</h4>
+                    <h4 className="font-semibold text-gray-700 dark:text-gray-200">Required Components</h4>
                     {projectComponents.length > 0 && (
                         <div className="space-y-2 max-h-40 overflow-y-auto pr-2">
                             {projectComponents.map(pc => {
                                 const component = components.find(c => c.id === pc.componentId);
                                 return (
-                                    <div key={pc.componentId} className="flex justify-between items-center bg-gray-700/50 p-2 rounded-md text-sm">
+                                    <div key={pc.componentId} className="flex justify-between items-center bg-gray-100 dark:bg-gray-700/50 p-2 rounded-md text-sm">
                                         <span>{pc.quantity}x {component?.name || 'Unknown'}</span>
-                                        <button type="button" onClick={() => handleRemoveComponent(pc.componentId)} className="text-red-400 hover:text-red-300">
+                                        <button type="button" onClick={() => handleRemoveComponent(pc.componentId)} className="text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300">
                                             <TrashIcon />
                                         </button>
                                     </div>
@@ -556,7 +558,7 @@ export const AddProjectModal: React.FC<AddProjectModalProps> = ({ isOpen, onClos
                             })}
                         </div>
                     )}
-                    <div className="flex items-end gap-2 p-2 bg-gray-900/50 rounded-md">
+                    <div className="flex items-end gap-2 p-2 bg-gray-50 dark:bg-gray-900/50 rounded-md">
                         <div className="flex-grow">
                             <label className="label-style text-xs" htmlFor="select-comp">Component</label>
                             <select id="select-comp" value={selectedComponentId} onChange={e => setSelectedComponentId(e.target.value)} className="input-style py-1 text-sm">

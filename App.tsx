@@ -1,19 +1,21 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
-import { useInventory } from './context';
-import { useAuth } from './auth';
-import { auth } from './firebase';
+import { useInventory } from './context.tsx';
+import { useAuth } from './auth.tsx';
+import { auth } from './firebase.ts';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { Component, View, ProjectSuggestion, Location as LocationType } from './types';
-import { identifyComponent, getProjectIdeas, askAboutComponent } from './services';
-import { Button, SecondaryButton, ScanIcon, InventoryIcon, ProjectsIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard, ProjectDetailModal } from './components';
+import { Component, View, ProjectSuggestion, Location as LocationType } from './types.ts';
+import { identifyComponent, getProjectIdeas, askAboutComponent } from './services.ts';
+import { Button, SecondaryButton, ScanIcon, InventoryIcon, ProjectsIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard, ProjectDetailModal, SettingsIcon } from './components.tsx';
+import { useTheme } from './ThemeContext.tsx';
 
 // --- ICONS ---
 const SignOutIcon = () => <svg className="w-6 h-6" strokeWidth="1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>;
-const WorkshopIcon = () => <svg className="w-8 h-8 text-teal-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5M19.5 8.25h-1.5m-15 3.75h1.5m15 0h1.5m-15 3.75h1.5m15 0h1.5M12 6.75h.008v.008H12V6.75zM12 12h.008v.008H12V12zm0 5.25h.008v.008H12v-.008z" /></svg>;
+const WorkshopIcon = () => <svg className="w-8 h-8 text-accent-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5M19.5 8.25h-1.5m-15 3.75h1.5m15 0h1.5m-15 3.75h1.5m15 0h1.5M12 6.75h.008v.008H12V6.75zM12 12h.008v.008H12V12zm0 5.25h.008v.008H12v-.008z" /></svg>;
 
 // --- VIEWS ---
 
-// (All original views: IdentifyView, InventoryView, etc. remain here without changes)
+// (All original views: IdentifyView, InventoryView, etc. remain here but are adapted for light/dark mode)
 const IdentifyView: React.FC = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -134,33 +136,33 @@ const IdentifyView: React.FC = () => {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <h1 className="text-3xl font-bold text-teal-400">Identify Component</h1>
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+      <h1 className="text-3xl font-bold text-accent-400">Identify Component</h1>
+      <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-lg">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
-            <label htmlFor="file-upload" className="block text-sm font-medium text-gray-300">Upload Image</label>
-            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-600 border-dashed rounded-md">
+            <label htmlFor="file-upload" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Upload Image</label>
+            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-md">
               <div className="space-y-1 text-center">
                 {preview ? (
                   <img src={preview} alt="Component preview" className="mx-auto h-48 w-auto object-contain" />
                 ) : (
-                  <svg className="mx-auto h-12 w-12 text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                  <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                     <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
-                <div className="flex text-sm text-gray-500">
-                  <label htmlFor="file-upload" className="relative cursor-pointer bg-gray-700 rounded-md font-medium text-teal-400 hover:text-teal-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-gray-800 focus-within:ring-teal-500 px-2">
+                <div className="flex text-sm text-gray-500 dark:text-gray-500">
+                  <label htmlFor="file-upload" className="relative cursor-pointer bg-white dark:bg-gray-700 rounded-md font-medium text-accent-500 dark:text-accent-400 hover:text-accent-600 dark:hover:text-accent-300 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-offset-gray-100 dark:focus-within:ring-offset-gray-800 focus-within:ring-accent-500 px-2">
                     <span>Upload a file</span>
                     <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} accept="image/*" />
                   </label>
                   <p className="pl-1">or drag and drop</p>
                 </div>
-                <p className="text-xs text-gray-600">PNG, JPG, GIF up to 10MB</p>
+                <p className="text-xs text-gray-400 dark:text-gray-600">PNG, JPG, GIF up to 10MB</p>
               </div>
             </div>
           </div>
           <div className="space-y-4">
-            <label htmlFor="manual-input" className="block text-sm font-medium text-gray-300">Or Enter Details Manually</label>
+            <label htmlFor="manual-input" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Or Enter Details Manually</label>
             <textarea id="manual-input" rows={4} className="input-style py-2 px-3" placeholder="e.g., 'Blue resistor with bands brown, black, orange, gold'" value={manualInput} onChange={(e) => setManualInput(e.target.value)}></textarea>
              <div className="flex gap-4">
                 <Button onClick={handleIdentify} disabled={isLoading || (!imageFile && !manualInput)}>
@@ -173,25 +175,25 @@ const IdentifyView: React.FC = () => {
       </div>
       
       {identificationHistory.length > 0 && !result && !isLoading && !error && (
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg mt-6 animate-fade-in">
-          <h2 className="text-xl font-bold text-gray-200 mb-4">Recently Identified</h2>
+        <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-lg mt-6 animate-fade-in">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">Recently Identified</h2>
           <div className="space-y-3">
             {identificationHistory.map(component => (
               <button 
                 key={component.id} 
                 onClick={() => handleHistoryClick(component)}
-                className="w-full flex items-center gap-4 p-3 bg-gray-900/50 rounded-lg text-left hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full flex items-center gap-4 p-3 bg-white dark:bg-gray-900/50 rounded-lg text-left hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-accent-500"
               >
                 {component.imageUrl ? (
-                  <img src={component.imageUrl} alt={component.name} className="w-12 h-12 object-cover rounded-md bg-gray-700 flex-shrink-0" />
+                  <img src={component.imageUrl} alt={component.name} className="w-12 h-12 object-cover rounded-md bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
                 ) : (
-                  <div className="w-12 h-12 bg-gray-700 rounded-md flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center flex-shrink-0">
                       <ScanIcon />
                   </div>
                 )}
                 <div className="overflow-hidden">
-                  <h3 className="font-bold text-gray-100 truncate">{component.name}</h3>
-                  <p className="text-sm text-gray-400 truncate">{component.simpleName}</p>
+                  <h3 className="font-bold text-gray-900 dark:text-gray-100 truncate">{component.name}</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{component.simpleName}</p>
                 </div>
               </button>
             ))}
@@ -199,40 +201,40 @@ const IdentifyView: React.FC = () => {
         </div>
       )}
 
-      {isLoading && <div className="text-center p-4"> <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400 mx-auto"></div><p className="mt-2">Workshop AI is thinking...</p></div>}
-      {error && <div className="bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded-lg">{error}</div>}
+      {isLoading && <div className="text-center p-4"> <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-400 mx-auto"></div><p className="mt-2">Workshop AI is thinking...</p></div>}
+      {error && <div className="bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-500 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">{error}</div>}
 
       {result && (
-        <div className="bg-gray-800 p-6 rounded-lg shadow-lg animate-fade-in">
-          <h2 className="text-2xl font-bold text-teal-400 mb-4">Identification Result</h2>
+        <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-lg animate-fade-in">
+          <h2 className="text-2xl font-bold text-accent-400 mb-4">Identification Result</h2>
           <div className="flex flex-col md:flex-row gap-6">
-            {result.imageUrl && <img src={result.imageUrl} alt={result.name} className="w-full md:w-48 h-48 object-cover rounded-lg bg-gray-700" />}
+            {result.imageUrl && <img src={result.imageUrl} alt={result.name} className="w-full md:w-48 h-48 object-cover rounded-lg bg-gray-200 dark:bg-gray-700" />}
             <div className="flex-1 space-y-4">
               <div>
                 <h3 className="text-xl font-bold">{result.name}</h3>
-                <p className="text-lg text-teal-300 -mt-1">{result.simpleName}</p>
-                <p className="text-md text-gray-400">{result.category}</p>
+                <p className="text-lg text-accent-500 dark:text-accent-300 -mt-1">{result.simpleName}</p>
+                <p className="text-md text-gray-500 dark:text-gray-400">{result.category}</p>
               </div>
-              <p className="text-gray-300">{result.description}</p>
+              <p className="text-gray-700 dark:text-gray-300">{result.description}</p>
               <div className="flex flex-wrap gap-2">
-                {result.tags.map(tag => <span key={tag} className="bg-gray-700 text-teal-300 text-xs font-semibold px-2 py-1 rounded-full">{tag}</span>)}
+                {result.tags.map(tag => <span key={tag} className="bg-gray-200 dark:bg-gray-700 text-accent-600 dark:text-accent-300 text-xs font-semibold px-2 py-1 rounded-full">{tag}</span>)}
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-700">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <div>
-              <h4 className="font-semibold text-gray-200 mb-2">Typical Applications</h4>
-              <ul className="list-disc list-inside text-gray-400 space-y-1">
+              <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Typical Applications</h4>
+              <ul className="list-disc list-inside text-gray-600 dark:text-gray-400 space-y-1">
                   {(result.typicalUses || []).map((use, i) => <li key={i}>{use}</li>)}
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold text-gray-200 mb-2">Specifications</h4>
-              <div className="space-y-1 text-gray-400 max-h-40 overflow-y-auto">
+              <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Specifications</h4>
+              <div className="space-y-1 text-gray-600 dark:text-gray-400 max-h-40 overflow-y-auto">
                   {Object.entries(result.specs).map(([key, value]) => (
                       <div key={key} className="flex justify-between text-sm pr-2">
-                          <span className="font-semibold text-gray-300 mr-2">{key}:</span>
+                          <span className="font-semibold text-gray-700 dark:text-gray-300 mr-2">{key}:</span>
                           <span className="text-right truncate">{value}</span>
                       </div>
                   ))}
@@ -240,27 +242,27 @@ const IdentifyView: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-700">
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
             <Button onClick={() => setIsModalOpen(true)}>Add to Inventory</Button>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-700">
-            <h3 className="text-xl font-bold mb-4 text-gray-200">Ask About This Component</h3>
-            <div className="bg-gray-900 rounded-lg p-4 h-64 overflow-y-auto flex flex-col gap-4">
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Ask About This Component</h3>
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-4 h-64 overflow-y-auto flex flex-col gap-4">
               {chatHistory.map((msg, index) => (
                 <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.role === 'user' ? 'bg-teal-700' : 'bg-gray-700'}`}>
-                    <p className="text-sm text-gray-100 whitespace-pre-wrap">{msg.text}</p>
+                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${msg.role === 'user' ? 'bg-accent-500 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                    <p className={`text-sm ${msg.role === 'user' ? 'text-white' : 'text-gray-800 dark:text-gray-100'} whitespace-pre-wrap`}>{msg.text}</p>
                   </div>
                 </div>
               ))}
               {isAnswering && (
                 <div className="flex justify-start">
-                  <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-700">
+                  <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse"></div>
-                      <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse [animation-delay:0.2s]"></div>
-                      <div className="w-2 h-2 bg-teal-400 rounded-full animate-pulse [animation-delay:0.4s]"></div>
+                      <div className="w-2 h-2 bg-accent-400 rounded-full animate-pulse"></div>
+                      <div className="w-2 h-2 bg-accent-400 rounded-full animate-pulse [animation-delay:0.2s]"></div>
+                      <div className="w-2 h-2 bg-accent-400 rounded-full animate-pulse [animation-delay:0.4s]"></div>
                     </div>
                   </div>
                 </div>
@@ -287,11 +289,11 @@ const IdentifyView: React.FC = () => {
         <div className="space-y-4">
           <h3 className="text-lg font-semibold">{result?.name}</h3>
           <div>
-            <label htmlFor="quantity" className="block text-sm font-medium text-gray-300">Quantity</label>
+            <label htmlFor="quantity" className="label-style">Quantity</label>
             <input type="number" id="quantity" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="input-style mt-1 py-2 px-3" />
           </div>
           <div>
-            <label htmlFor="location" className="block text-sm font-medium text-gray-300">Location</label>
+            <label htmlFor="location" className="label-style">Location</label>
             <select id="location" value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="input-style mt-1 py-2 px-3">
               {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
             </select>
@@ -312,7 +314,7 @@ const InventoryView: React.FC = () => {
   const [isAddComponentModalOpen, setIsAddComponentModalOpen] = useState(false);
 
   if (loading) {
-    return <div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div></div>;
+    return <div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-400"></div></div>;
   }
   
   const allInventory = getInventoryWithDetails();
@@ -333,7 +335,7 @@ const InventoryView: React.FC = () => {
     return (
         <div className="p-6 text-center text-gray-500 flex flex-col items-center justify-center h-full">
             <InventoryIcon />
-            <h2 className="mt-4 text-xl font-semibold text-gray-300">Your Workshop is Tidy!</h2>
+            <h2 className="mt-4 text-xl font-semibold text-gray-700 dark:text-gray-300">Your Workshop is Tidy!</h2>
             <p className="mt-1">Your inventory is empty. Use the 'Identify' tab or manually add a component to get started.</p>
             <Button className="mt-6" onClick={() => setIsAddComponentModalOpen(true)}>Add First Component</Button>
             <AddComponentModal isOpen={isAddComponentModalOpen} onClose={() => setIsAddComponentModalOpen(false)} />
@@ -344,7 +346,7 @@ const InventoryView: React.FC = () => {
   return (
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex flex-wrap justify-between items-center gap-4">
-        <h1 className="text-3xl font-bold text-teal-400">Inventory</h1>
+        <h1 className="text-3xl font-bold text-accent-400">Inventory</h1>
         <div className="flex items-center gap-4">
             <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-3">
@@ -418,13 +420,13 @@ const ProjectIdeasView: React.FC = () => {
     return (
         <div className="p-4 md:p-6 space-y-6">
             <div className="flex flex-wrap justify-between items-center gap-4">
-                <h1 className="text-3xl font-bold text-teal-400">Project Ideas</h1>
+                <h1 className="text-3xl font-bold text-accent-400">Project Ideas</h1>
                 <Button onClick={handleGenerateProjects} disabled={isLoading}>
                     {isLoading ? 'Generating...' : 'Suggest Projects From My Inventory'}
                 </Button>
             </div>
-            {isLoading && <div className="text-center p-4"> <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400 mx-auto"></div><p className="mt-2">Finding cool projects for you...</p></div>}
-            {error && <div className="bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded-lg">{error}</div>}
+            {isLoading && <div className="text-center p-4"> <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-400 mx-auto"></div><p className="mt-2">Finding cool projects for you...</p></div>}
+            {error && <div className="bg-red-100 dark:bg-red-900/50 border border-red-400 dark:border-red-500 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">{error}</div>}
             
             {projects.length > 0 && (
                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -433,10 +435,10 @@ const ProjectIdeasView: React.FC = () => {
             )}
 
             {projects.length === 0 && !isLoading && !error && (
-                <div className="text-center py-16 px-6 bg-gray-800 rounded-lg">
+                <div className="text-center py-16 px-6 bg-gray-100 dark:bg-gray-800 rounded-lg">
                     <ProjectsIcon />
                     <h2 className="mt-2 text-xl font-semibold">Ready to build something?</h2>
-                    <p className="mt-1 text-gray-400">Click the button to get project ideas based on your current inventory.</p>
+                    <p className="mt-1 text-gray-500 dark:text-gray-400">Click the button to get project ideas based on your current inventory.</p>
                 </div>
             )}
              <ProjectDetailModal 
@@ -454,7 +456,7 @@ const MyProjectsView: React.FC = () => {
     return (
         <div className="p-4 md:p-6 space-y-6">
             <div className="flex flex-wrap justify-between items-center gap-4">
-                <h1 className="text-3xl font-bold text-teal-400">My Projects</h1>
+                <h1 className="text-3xl font-bold text-accent-400">My Projects</h1>
                 <Button onClick={() => setIsAddProjectModalOpen(true)}>Create New Project</Button>
             </div>
 
@@ -463,10 +465,10 @@ const MyProjectsView: React.FC = () => {
                     {projects.map((proj) => <ProjectManagementCard key={proj.id} project={proj} />)}
                 </div>
             ) : (
-                 <div className="text-center py-16 px-6 bg-gray-800 rounded-lg">
+                 <div className="text-center py-16 px-6 bg-gray-100 dark:bg-gray-800 rounded-lg">
                     <ClipboardListIcon />
                     <h2 className="mt-2 text-xl font-semibold">No projects yet.</h2>
-                    <p className="mt-1 text-gray-400">Click the button to create your first project and track its components.</p>
+                    <p className="mt-1 text-gray-500 dark:text-gray-400">Click the button to create your first project and track its components.</p>
                 </div>
             )}
             
@@ -490,31 +492,74 @@ const LocationsView: React.FC = () => {
 
     return (
         <div className="p-4 md:p-6 space-y-6">
-            <h1 className="text-3xl font-bold text-teal-400">Storage Locations</h1>
+            <h1 className="text-3xl font-bold text-accent-400">Storage Locations</h1>
             
-            <form onSubmit={handleAddLocation} className="bg-gray-800 p-6 rounded-lg shadow-lg space-y-4">
-                <h2 className="text-xl font-bold text-gray-200">Add New Location</h2>
+            <form onSubmit={handleAddLocation} className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-lg space-y-4">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">Add New Location</h2>
                 <div>
-                    <label htmlFor="loc-name" className="block text-sm font-medium text-gray-300">Location Name</label>
+                    <label htmlFor="loc-name" className="label-style">Location Name</label>
                     <input type="text" id="loc-name" value={name} onChange={e => setName(e.target.value)} className="input-style mt-1 py-2 px-3" placeholder="e.g., Small Parts Box" required/>
                 </div>
                 <div>
-                    <label htmlFor="loc-desc" className="block text-sm font-medium text-gray-300">Description</label>
+                    <label htmlFor="loc-desc" className="label-style">Description</label>
                     <input type="text" id="loc-desc" value={description} onChange={e => setDescription(e.target.value)} className="input-style mt-1 py-2 px-3" placeholder="e.g., On the second shelf" required/>
                 </div>
                 <Button type="submit">Add Location</Button>
             </form>
 
             <div className="space-y-4">
-                <h2 className="text-xl font-bold text-gray-200">Existing Locations</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">Existing Locations</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {locations.map(loc => (
-                        <div key={loc.id} className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-                            <h3 className="font-bold text-teal-400">{loc.name}</h3>
-                            <p className="text-sm text-gray-400">{loc.description}</p>
+                        <div key={loc.id} className="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                            <h3 className="font-bold text-accent-400">{loc.name}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{loc.description}</p>
                         </div>
                     ))}
                 </div>
+            </div>
+        </div>
+    );
+};
+const SettingsView: React.FC = () => {
+    const { theme, setTheme, accentColor, setAccentColor } = useTheme();
+    const { currentUser } = useAuth();
+    
+    const handleSignOut = () => {
+        signOut(auth);
+    };
+
+    return (
+        <div className="p-4 md:p-6 space-y-8">
+            <h1 className="text-3xl font-bold text-accent-400">Settings</h1>
+
+            <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">Appearance</h2>
+                <div className="space-y-6">
+                    <div>
+                        <label className="label-style">Theme</label>
+                        <div className="flex gap-2 rounded-lg bg-gray-200 dark:bg-gray-700 p-1">
+                            <button onClick={() => setTheme('light')} className={`flex-1 py-2 rounded-md text-sm font-semibold transition-colors ${theme === 'light' ? 'bg-white shadow text-accent-600' : 'text-gray-600 dark:text-gray-300'}`}>Light</button>
+                            <button onClick={() => setTheme('dark')} className={`flex-1 py-2 rounded-md text-sm font-semibold transition-colors ${theme === 'dark' ? 'bg-gray-900 shadow text-accent-400' : 'text-gray-600 dark:text-gray-300'}`}>Dark</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label className="label-style">Accent Color</label>
+                        <div className="flex gap-4">
+                            <button onClick={() => setAccentColor('teal')} className={`w-10 h-10 rounded-full bg-teal-500 transition-transform ${accentColor === 'teal' ? 'ring-2 ring-offset-2 ring-offset-gray-100 dark:ring-offset-gray-800 ring-teal-500 scale-110' : 'hover:scale-105'}`}></button>
+                            <button onClick={() => setAccentColor('blue')} className={`w-10 h-10 rounded-full bg-blue-500 transition-transform ${accentColor === 'blue' ? 'ring-2 ring-offset-2 ring-offset-gray-100 dark:ring-offset-gray-800 ring-blue-500 scale-110' : 'hover:scale-105'}`}></button>
+                            <button onClick={() => setAccentColor('purple')} className={`w-10 h-10 rounded-full bg-purple-500 transition-transform ${accentColor === 'purple' ? 'ring-2 ring-offset-2 ring-offset-gray-100 dark:ring-offset-gray-800 ring-purple-500 scale-110' : 'hover:scale-105'}`}></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+             <div className="bg-gray-100 dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+                <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-4">Account</h2>
+                 <p className="text-gray-600 dark:text-gray-400 mb-4">You are signed in as <span className="font-semibold text-gray-800 dark:text-gray-200">{currentUser?.email}</span>.</p>
+                <SecondaryButton onClick={handleSignOut} className="bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/80 border border-red-200 dark:border-red-500/50">
+                    Sign Out
+                </SecondaryButton>
             </div>
         </div>
     );
@@ -544,12 +589,12 @@ const LoginView: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900">
-      <div className="w-full max-w-md p-8 space-y-8 bg-gray-800 rounded-lg shadow-lg">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
         <div className="text-center">
             <WorkshopIcon />
-            <h2 className="mt-4 text-3xl font-bold text-white">Welcome to Workshop AI</h2>
-            <p className="mt-2 text-gray-400">{isSignUp ? 'Create an account to get started' : 'Sign in to your workshop'}</p>
+            <h2 className="mt-4 text-3xl font-bold text-gray-900 dark:text-white">Welcome to Workshop AI</h2>
+            <p className="mt-2 text-gray-500 dark:text-gray-400">{isSignUp ? 'Create an account to get started' : 'Sign in to your workshop'}</p>
         </div>
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
@@ -560,7 +605,7 @@ const LoginView: React.FC = () => {
             <label className="label-style" htmlFor="password">Password</label>
             <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} className="input-style py-2 px-3" placeholder="••••••••" />
           </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
           <div>
             <Button type="submit" className="w-full justify-center" disabled={loading}>
               {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
@@ -568,7 +613,7 @@ const LoginView: React.FC = () => {
           </div>
         </form>
         <div className="text-center">
-          <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm text-teal-400 hover:text-teal-300">
+          <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm text-accent-500 dark:text-accent-400 hover:text-accent-600 dark:hover:text-accent-300">
             {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
           </button>
         </div>
@@ -591,7 +636,7 @@ const App: React.FC = () => {
   
   const renderView = () => {
     if (inventoryLoading) {
-        return <div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div></div>;
+        return <div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-400"></div></div>;
     }
     switch (currentView) {
       case View.IDENTIFY: return <IdentifyView />;
@@ -599,23 +644,26 @@ const App: React.FC = () => {
       case View.IDEAS: return <ProjectIdeasView />;
       case View.MY_PROJECTS: return <MyProjectsView />;
       case View.LOCATIONS: return <LocationsView />;
+      case View.SETTINGS: return <SettingsView />;
       default: return <InventoryView />;
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-900 text-gray-100 font-sans">
+    <div className="min-h-screen flex flex-col md:flex-row bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 font-sans">
       <style>{`
-        .input-style { background-color: #1F2937; border: 1px solid #4B5563; color: #F3F4F6; border-radius: 0.5rem; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; }
-        .input-style:focus { border-color: #2DD4BF; box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.5); outline: none; }
-        .label-style { display: block; text-sm; font-medium; color: #D1D5DB; margin-bottom: 0.25rem; }
+        .input-style { background-color: #F3F4F6; border: 1px solid #D1D5DB; color: #111827; border-radius: 0.5rem; width: 100%; transition: border-color 0.2s, box-shadow 0.2s; padding: 0.5rem 0.75rem;}
+        .dark .input-style { background-color: #1F2937; border-color: #4B5563; color: #F3F4F6; }
+        .input-style:focus { border-color: rgb(var(--color-accent-500)); box-shadow: 0 0 0 2px rgba(var(--color-accent-500), 0.5); outline: none; }
+        .label-style { display: block; text-sm; font-medium; color: #374151; margin-bottom: 0.25rem; }
+        .dark .label-style { color: #D1D5DB; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in 0.5s ease-out forwards; }
         @keyframes scale-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .animate-scale-in { animation: scale-in 0.2s ease-out forwards; }
       `}</style>
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
-      <main className="flex-1 pb-16 md:pb-0">
+      <main className="flex-1 pb-16 md:pb-0 overflow-y-auto">
         {renderView()}
       </main>
       <BottomNav currentView={currentView} setCurrentView={setCurrentView} />
@@ -636,11 +684,12 @@ const navItems = [
   { view: View.IDEAS, icon: <ProjectsIcon />, label: 'Ideas' },
   { view: View.MY_PROJECTS, icon: <ClipboardListIcon />, label: 'My Projects' },
   { view: View.LOCATIONS, icon: <LocationIcon />, label: 'Locations' },
+  { view: View.SETTINGS, icon: <SettingsIcon />, label: 'Settings' },
 ];
 
 const NavItem: React.FC<{ item: typeof navItems[0]; isActive: boolean; onClick: () => void; isSidebar: boolean; }> = ({ item, isActive, onClick, isSidebar }) => {
-  const activeClass = 'bg-gray-800 text-teal-400';
-  const inactiveClass = 'text-gray-400 hover:bg-gray-700 hover:text-white';
+  const activeClass = 'bg-gray-100 dark:bg-gray-800 text-accent-500 dark:text-accent-400';
+  const inactiveClass = 'text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white';
   const baseClass = isSidebar ? 'flex items-center gap-3 rounded-lg px-3 py-2 transition-colors' : 'flex flex-col items-center justify-center p-2 rounded-lg';
   return (
     <button onClick={onClick} className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}>
@@ -652,12 +701,9 @@ const NavItem: React.FC<{ item: typeof navItems[0]; isActive: boolean; onClick: 
 
 const Sidebar: React.FC<NavProps> = ({ currentView, setCurrentView }) => {
     const { currentUser } = useAuth();
-    const handleSignOut = () => {
-        signOut(auth);
-    };
 
     return (
-        <aside className="hidden md:flex flex-col w-64 bg-gray-800/50 border-r border-gray-700 p-4">
+        <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-gray-800/50 border-r border-gray-200 dark:border-gray-700 p-4">
             <div className="flex items-center gap-2 mb-8">
             <WorkshopIcon />
             <h1 className="text-xl font-bold">Workshop AI</h1>
@@ -665,21 +711,17 @@ const Sidebar: React.FC<NavProps> = ({ currentView, setCurrentView }) => {
             <nav className="flex-1 space-y-2">
             {navItems.map(item => <NavItem key={item.view} item={item} isActive={currentView === item.view} onClick={() => setCurrentView(item.view)} isSidebar={true} />)}
             </nav>
-            <div className="mt-auto flex flex-col gap-2 pt-4 border-t border-gray-700">
-                <div className="text-xs text-gray-400 px-3 truncate" title={currentUser?.email || ''}>
+            <div className="mt-auto flex flex-col gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="text-xs text-gray-500 dark:text-gray-400 px-3 truncate" title={currentUser?.email || ''}>
                     {currentUser?.email}
                 </div>
-                <button onClick={handleSignOut} className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors w-full text-left">
-                    <SignOutIcon />
-                    <span className="text-sm font-medium">Sign Out</span>
-                </button>
             </div>
         </aside>
     );
 };
 
 const BottomNav: React.FC<NavProps> = ({ currentView, setCurrentView }) => (
-  <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 flex justify-around p-1 z-10">
+  <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex justify-around p-1 z-10">
     {navItems.map(item => <NavItem key={item.view} item={item} isActive={currentView === item.view} onClick={() => setCurrentView(item.view)} isSidebar={false} />)}
   </nav>
 );

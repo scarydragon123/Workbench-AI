@@ -1,7 +1,8 @@
+
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo, ReactNode } from 'react';
-import { InventoryItem, Component, Location as LocationType, Project } from './types';
-import { useAuth } from './auth';
-import { db } from './firebase';
+import { InventoryItem, Component, Location as LocationType, Project } from './types.ts';
+import { useAuth } from './auth.tsx';
+import { db } from './firebase.ts';
 import { collection, doc, getDocs, writeBatch, setDoc, deleteDoc } from 'firebase/firestore';
 
 interface InventoryContextType {

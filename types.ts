@@ -54,4 +54,5 @@ export enum View {
   IDEAS,
   MY_PROJECTS,
   LOCATIONS,
+  SETTINGS,
 }
