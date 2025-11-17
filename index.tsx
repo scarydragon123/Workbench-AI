@@ -1,8 +1,8 @@
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { InventoryProvider } from './context';
+import { AuthProvider } from './auth';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -12,8 +12,10 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <InventoryProvider>
-      <App />
-    </InventoryProvider>
+    <AuthProvider>
+      <InventoryProvider>
+        <App />
+      </InventoryProvider>
+    </AuthProvider>
   </React.StrictMode>
 );

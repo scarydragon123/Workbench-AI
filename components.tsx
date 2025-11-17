@@ -397,7 +397,6 @@ export const AddComponentModal: React.FC<AddComponentModalProps> = ({ isOpen, on
     const { addComponent, addInventoryItem, locations } = useInventory();
     
     const [name, setName] = useState('');
-    // FIX: Add state for simpleName.
     const [simpleName, setSimpleName] = useState('');
     const [category, setCategory] = useState('');
     const [description, setDescription] = useState('');
@@ -418,7 +417,6 @@ export const AddComponentModal: React.FC<AddComponentModalProps> = ({ isOpen, on
         const newComponent: Component = {
             id: newId,
             name,
-            // FIX: Add simpleName to the new component object.
             simpleName,
             category,
             description,
@@ -435,7 +433,6 @@ export const AddComponentModal: React.FC<AddComponentModalProps> = ({ isOpen, on
         
         // Reset form
         setName('');
-        // FIX: Reset simpleName state.
         setSimpleName('');
         setCategory('');
         setDescription('');
@@ -453,7 +450,6 @@ export const AddComponentModal: React.FC<AddComponentModalProps> = ({ isOpen, on
                     <label className="label-style" htmlFor="comp-name">Component Name</label>
                     <input id="comp-name" type="text" value={name} onChange={e => setName(e.target.value)} className="input-style" placeholder="e.g., ATmega328P" required />
                 </div>
-                {/* FIX: Add input field for simpleName. */}
                 <div>
                     <label className="label-style" htmlFor="comp-simple-name">Simple Name</label>
                     <input id="comp-simple-name" type="text" value={simpleName} onChange={e => setSimpleName(e.target.value)} className="input-style" placeholder="e.g., 8-bit Microcontroller" required />

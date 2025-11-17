@@ -1,12 +1,19 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useInventory } from './context';
+import { useAuth } from './auth';
+import { auth } from './firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { Component, View, ProjectSuggestion, Location as LocationType } from './types';
 import { identifyComponent, getProjectIdeas, askAboutComponent } from './services';
 import { Button, SecondaryButton, ScanIcon, InventoryIcon, ProjectsIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard, ProjectDetailModal } from './components';
 
+// --- ICONS ---
+const SignOutIcon = () => <svg className="w-6 h-6" strokeWidth="1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>;
+const WorkshopIcon = () => <svg className="w-8 h-8 text-teal-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5M19.5 8.25h-1.5m-15 3.75h1.5m15 0h1.5m-15 3.75h1.5m15 0h1.5M12 6.75h.008v.008H12V6.75zM12 12h.008v.008H12V12zm0 5.25h.008v.008H12v-.008z" /></svg>;
+
 // --- VIEWS ---
 
+// (All original views: IdentifyView, InventoryView, etc. remain here without changes)
 const IdentifyView: React.FC = () => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -298,14 +305,17 @@ const IdentifyView: React.FC = () => {
     </div>
   );
 };
-
 const InventoryView: React.FC = () => {
-  const { getInventoryWithDetails, findComponentById } = useInventory();
-  const allInventory = getInventoryWithDetails();
-
+  const { getInventoryWithDetails, findComponentById, loading } = useInventory();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
   const [isAddComponentModalOpen, setIsAddComponentModalOpen] = useState(false);
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div></div>;
+  }
+  
+  const allInventory = getInventoryWithDetails();
 
   const filteredInventory = allInventory.filter(item => {
     const query = searchQuery.toLowerCase();
@@ -378,7 +388,6 @@ const InventoryView: React.FC = () => {
     </div>
   );
 };
-
 const ProjectIdeasView: React.FC = () => {
     const { getInventoryWithDetails } = useInventory();
     const [isLoading, setIsLoading] = useState(false);
@@ -438,7 +447,6 @@ const ProjectIdeasView: React.FC = () => {
         </div>
     );
 };
-
 const MyProjectsView: React.FC = () => {
     const { projects } = useInventory();
     const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
@@ -466,8 +474,6 @@ const MyProjectsView: React.FC = () => {
         </div>
     );
 };
-
-
 const LocationsView: React.FC = () => {
     const { locations, addLocation } = useInventory();
     const [name, setName] = useState('');
@@ -513,27 +519,87 @@ const LocationsView: React.FC = () => {
         </div>
     );
 };
+const LoginView: React.FC = () => {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="w-full max-w-md p-8 space-y-8 bg-gray-800 rounded-lg shadow-lg">
+        <div className="text-center">
+            <WorkshopIcon />
+            <h2 className="mt-4 text-3xl font-bold text-white">Welcome to Workshop AI</h2>
+            <p className="mt-2 text-gray-400">{isSignUp ? 'Create an account to get started' : 'Sign in to your workshop'}</p>
+        </div>
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div>
+            <label className="label-style" htmlFor="email">Email address</label>
+            <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={e => setEmail(e.target.value)} className="input-style py-2 px-3" placeholder="you@example.com" />
+          </div>
+          <div>
+            <label className="label-style" htmlFor="password">Password</label>
+            <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} className="input-style py-2 px-3" placeholder="••••••••" />
+          </div>
+          {error && <p className="text-sm text-red-400">{error}</p>}
+          <div>
+            <Button type="submit" className="w-full justify-center" disabled={loading}>
+              {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+            </Button>
+          </div>
+        </form>
+        <div className="text-center">
+          <button onClick={() => setIsSignUp(!isSignUp)} className="text-sm text-teal-400 hover:text-teal-300">
+            {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
 // --- APP ---
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.IDENTIFY);
+  const { currentUser } = useAuth();
+  const { loading: inventoryLoading } = useInventory();
 
+  if (!currentUser) {
+    return <LoginView />;
+  }
+  
   const renderView = () => {
+    if (inventoryLoading) {
+        return <div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-400"></div></div>;
+    }
     switch (currentView) {
-      case View.IDENTIFY:
-        return <IdentifyView />;
-      case View.INVENTORY:
-        return <InventoryView />;
-      case View.IDEAS:
-        return <ProjectIdeasView />;
-      case View.MY_PROJECTS:
-        return <MyProjectsView />;
-      case View.LOCATIONS:
-        return <LocationsView />;
-      default:
-        return <InventoryView />;
+      case View.IDENTIFY: return <IdentifyView />;
+      case View.INVENTORY: return <InventoryView />;
+      case View.IDEAS: return <ProjectIdeasView />;
+      case View.MY_PROJECTS: return <MyProjectsView />;
+      case View.LOCATIONS: return <LocationsView />;
+      default: return <InventoryView />;
     }
   };
 
@@ -584,17 +650,33 @@ const NavItem: React.FC<{ item: typeof navItems[0]; isActive: boolean; onClick: 
   );
 };
 
-const Sidebar: React.FC<NavProps> = ({ currentView, setCurrentView }) => (
-  <aside className="hidden md:flex flex-col w-64 bg-gray-800/50 border-r border-gray-700 p-4">
-    <div className="flex items-center gap-2 mb-8">
-      <svg className="w-8 h-8 text-teal-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5M19.5 8.25h-1.5m-15 3.75h1.5m15 0h1.5m-15 3.75h1.5m15 0h1.5M12 6.75h.008v.008H12V6.75zM12 12h.008v.008H12V12zm0 5.25h.008v.008H12v-.008z" /></svg>
-      <h1 className="text-xl font-bold">Workshop AI</h1>
-    </div>
-    <nav className="flex-1 space-y-2">
-      {navItems.map(item => <NavItem key={item.view} item={item} isActive={currentView === item.view} onClick={() => setCurrentView(item.view)} isSidebar={true} />)}
-    </nav>
-  </aside>
-);
+const Sidebar: React.FC<NavProps> = ({ currentView, setCurrentView }) => {
+    const { currentUser } = useAuth();
+    const handleSignOut = () => {
+        signOut(auth);
+    };
+
+    return (
+        <aside className="hidden md:flex flex-col w-64 bg-gray-800/50 border-r border-gray-700 p-4">
+            <div className="flex items-center gap-2 mb-8">
+            <WorkshopIcon />
+            <h1 className="text-xl font-bold">Workshop AI</h1>
+            </div>
+            <nav className="flex-1 space-y-2">
+            {navItems.map(item => <NavItem key={item.view} item={item} isActive={currentView === item.view} onClick={() => setCurrentView(item.view)} isSidebar={true} />)}
+            </nav>
+            <div className="mt-auto flex flex-col gap-2 pt-4 border-t border-gray-700">
+                <div className="text-xs text-gray-400 px-3 truncate" title={currentUser?.email || ''}>
+                    {currentUser?.email}
+                </div>
+                <button onClick={handleSignOut} className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 hover:bg-gray-700 hover:text-white transition-colors w-full text-left">
+                    <SignOutIcon />
+                    <span className="text-sm font-medium">Sign Out</span>
+                </button>
+            </div>
+        </aside>
+    );
+};
 
 const BottomNav: React.FC<NavProps> = ({ currentView, setCurrentView }) => (
   <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-800 border-t border-gray-700 flex justify-around p-1 z-10">

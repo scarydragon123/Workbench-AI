@@ -1,11 +1,15 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo, ReactNode } from 'react';
 import { InventoryItem, Component, Location as LocationType, Project } from './types';
+import { useAuth } from './auth';
+import { db } from './firebase';
+import { collection, doc, getDocs, writeBatch, setDoc, deleteDoc } from 'firebase/firestore';
 
 interface InventoryContextType {
   components: Component[];
   inventory: InventoryItem[];
   locations: LocationType[];
   projects: Project[];
+  loading: boolean;
   addComponent: (component: Component) => void;
   deleteComponent: (componentId: string) => void;
   addInventoryItem: (item: Omit<InventoryItem, 'id'>) => void;
@@ -20,160 +24,155 @@ interface InventoryContextType {
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
 
-const initialLocations: LocationType[] = [
-    { id: 'loc-1', name: 'Main Drawer Unit', description: 'The big blue tower of drawers.' },
-    { id: 'loc-2', name: 'Resistor Box', description: 'The box with resistor strips.' },
-    { id: 'loc-3', name: 'IC Tray', description: 'Anti-static foam for integrated circuits.' },
-];
-
-const initialComponents: Component[] = [
-    { 
-        id: 'comp-1', 
-        name: '10kΩ Resistor', 
-        // FIX: Add missing simpleName property.
-        simpleName: 'Resistor',
-        category: 'Passive', 
-        specs: { Resistance: '10kΩ', Tolerance: '5%', Power: '1/4W' }, 
-        tags: ['pull-up', 'voltage-divider'], 
-        description: 'A common resistor used in many circuits to impede the flow of current.',
-        typicalUses: ['Pull-up/pull-down resistor for digital logic', 'Voltage dividers', 'Current limiting for LEDs'],
-        recommendedCircuits: ['Simple voltage divider with another resistor', 'RC filter with a capacitor']
-    },
-    { 
-        id: 'comp-2', 
-        name: 'ESP32-WROOM-32', 
-        // FIX: Add missing simpleName property.
-        simpleName: 'WiFi Microcontroller Module',
-        category: 'MCU', 
-        specs: { 'Wi-Fi': '802.11 b/g/n', Bluetooth: 'v4.2 BR/EDR & BLE' }, 
-        tags: ['iot', 'wifi', 'microcontroller'], 
-        description: 'A powerful microcontroller with integrated Wi-Fi and Bluetooth, ideal for IoT projects.',
-        typicalUses: ['IoT sensor nodes', 'Home automation hubs', 'Wireless controllers'],
-        recommendedCircuits: ['Basic power circuit (3.3V)', 'Connecting to I2C sensors like MPU-6050']
-    },
-];
-
-const initialInventory: InventoryItem[] = [
-    { componentId: 'comp-1', locationId: 'loc-2', quantity: 150 },
-    { componentId: 'comp-2', locationId: 'loc-1', quantity: 5 },
-];
-
-const initialProjects: Project[] = [
-    {
-        id: 'proj-1',
-        name: 'IoT Weather Station',
-        description: 'A simple weather station that reports temperature and humidity over WiFi.',
-        components: [
-            { componentId: 'comp-2', quantity: 1 }
-        ]
-    }
-];
-
-
 export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [components, setComponents] = useState<Component[]>(() => {
-    try {
-      const saved = localStorage.getItem('ws_components');
-      return saved ? JSON.parse(saved) : initialComponents;
-    } catch (error) {
-      console.error("Failed to parse components from localStorage", error);
-      return initialComponents;
-    }
-  });
-
-  const [inventory, setInventory] = useState<InventoryItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('ws_inventory');
-      return saved ? JSON.parse(saved) : initialInventory;
-    } catch (error) {
-      console.error("Failed to parse inventory from localStorage", error);
-      return initialInventory;
-    }
-  });
-
-  const [locations, setLocations] = useState<LocationType[]>(() => {
-    try {
-      const saved = localStorage.getItem('ws_locations');
-      return saved ? JSON.parse(saved) : initialLocations;
-    } catch (error) {
-      console.error("Failed to parse locations from localStorage", error);
-      return initialLocations;
-    }
-  });
-
-  const [projects, setProjects] = useState<Project[]>(() => {
-    try {
-      const saved = localStorage.getItem('ws_projects');
-      return saved ? JSON.parse(saved) : initialProjects;
-    } catch (error) {
-      console.error("Failed to parse projects from localStorage", error);
-      return initialProjects;
-    }
-  });
+  const { currentUser } = useAuth();
+  const [components, setComponents] = useState<Component[]>([]);
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [locations, setLocations] = useState<LocationType[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem('ws_components', JSON.stringify(components));
-  }, [components]);
+    const fetchData = async () => {
+      if (currentUser) {
+        setLoading(true);
+        try {
+          const componentsRef = collection(db, 'users', currentUser.uid, 'components');
+          const inventoryRef = collection(db, 'users', currentUser.uid, 'inventory');
+          const locationsRef = collection(db, 'users', currentUser.uid, 'locations');
+          const projectsRef = collection(db, 'users', currentUser.uid, 'projects');
 
-  useEffect(() => {
-    localStorage.setItem('ws_inventory', JSON.stringify(inventory));
-  }, [inventory]);
+          const [componentsSnap, inventorySnap, locationsSnap, projectsSnap] = await Promise.all([
+            getDocs(componentsRef),
+            getDocs(inventoryRef),
+            getDocs(locationsRef),
+            getDocs(projectsRef)
+          ]);
 
-  useEffect(() => {
-    localStorage.setItem('ws_locations', JSON.stringify(locations));
-  }, [locations]);
-  
-  useEffect(() => {
-    localStorage.setItem('ws_projects', JSON.stringify(projects));
-  }, [projects]);
+          setComponents(componentsSnap.docs.map(doc => doc.data() as Component));
+          setInventory(inventorySnap.docs.map(doc => doc.data() as InventoryItem));
+          setLocations(locationsSnap.docs.map(doc => doc.data() as LocationType));
+          setProjects(projectsSnap.docs.map(doc => doc.data() as Project));
 
-  const addComponent = useCallback((component: Component) => {
-    setComponents(prev => {
-        if (!prev.some(c => c.id === component.id)) {
-            return [...prev, component];
+        } catch (error) {
+          console.error("Failed to fetch data from Firestore", error);
+        } finally {
+          setLoading(false);
         }
-        return prev;
-    });
-  }, []);
+      } else {
+        setComponents([]);
+        setInventory([]);
+        setLocations([]);
+        setProjects([]);
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [currentUser]);
 
-  const deleteComponent = useCallback((componentId: string) => {
-    setComponents(prev => prev.filter(c => c.id !== componentId));
-    setInventory(prev => prev.filter(i => i.componentId !== componentId));
-  }, []);
+  const addComponent = useCallback(async (component: Component) => {
+    if (!currentUser) return;
+    try {
+      const componentRef = doc(db, 'users', currentUser.uid, 'components', component.id);
+      await setDoc(componentRef, component);
+      setComponents(prev => [...prev, component]);
+    } catch (error) {
+      console.error("Error adding component: ", error);
+    }
+  }, [currentUser]);
 
-  const addInventoryItem = useCallback((item: Omit<InventoryItem, 'id'>) => {
-    setInventory(prev => {
-        const existing = prev.find(i => i.componentId === item.componentId && i.locationId === item.locationId);
+  const deleteComponent = useCallback(async (componentId: string) => {
+    if (!currentUser) return;
+    try {
+      const batch = writeBatch(db);
+      const componentRef = doc(db, 'users', currentUser.uid, 'components', componentId);
+      batch.delete(componentRef);
+
+      const inventoryToDelete = inventory.filter(i => i.componentId === componentId);
+      inventoryToDelete.forEach(item => {
+        const inventoryId = `${item.componentId}-${item.locationId}`;
+        const inventoryRef = doc(db, 'users', currentUser.uid, 'inventory', inventoryId);
+        batch.delete(inventoryRef);
+      });
+
+      await batch.commit();
+
+      setComponents(prev => prev.filter(c => c.id !== componentId));
+      setInventory(prev => prev.filter(i => i.componentId !== componentId));
+    } catch (error) {
+      console.error("Error deleting component: ", error);
+    }
+  }, [currentUser, inventory]);
+
+  const addInventoryItem = useCallback(async (item: Omit<InventoryItem, 'id'>) => {
+    if (!currentUser) return;
+    try {
+        const inventoryId = `${item.componentId}-${item.locationId}`;
+        const inventoryRef = doc(db, 'users', currentUser.uid, 'inventory', inventoryId);
+        
+        const existing = inventory.find(i => i.componentId === item.componentId && i.locationId === item.locationId);
+        const newQuantity = existing ? existing.quantity + item.quantity : item.quantity;
+        const newItemData = { ...item, quantity: newQuantity };
+
+        await setDoc(inventoryRef, newItemData);
+        
         if (existing) {
-            return prev.map(i => i === existing ? { ...i, quantity: i.quantity + item.quantity } : i);
+            setInventory(prev => prev.map(i => i.componentId === item.componentId && i.locationId === item.locationId ? newItemData : i));
+        } else {
+            setInventory(prev => [...prev, newItemData]);
         }
-        return [...prev, item];
-    });
-  }, []);
+    } catch (error) {
+        console.error("Error adding inventory item: ", error);
+    }
+  }, [currentUser, inventory]);
 
-    const updateInventoryItem = useCallback((componentId: string, locationId: string, quantity: number) => {
-        setInventory(prev => {
-            if (quantity <= 0) {
-                return prev.filter(item => !(item.componentId === componentId && item.locationId === locationId));
-            }
-            return prev.map(item =>
+  const updateInventoryItem = useCallback(async (componentId: string, locationId: string, quantity: number) => {
+    if (!currentUser) return;
+    try {
+        const inventoryId = `${componentId}-${locationId}`;
+        const inventoryRef = doc(db, 'users', currentUser.uid, 'inventory', inventoryId);
+        
+        if (quantity <= 0) {
+            await deleteDoc(inventoryRef);
+            setInventory(prev => prev.filter(item => !(item.componentId === componentId && item.locationId === locationId)));
+        } else {
+            const updatedItem = { componentId, locationId, quantity };
+            await setDoc(inventoryRef, updatedItem, { merge: true });
+            setInventory(prev => prev.map(item =>
                 item.componentId === componentId && item.locationId === locationId
                     ? { ...item, quantity }
                     : item
-            );
-        });
-    }, []);
+            ));
+        }
+    } catch (error) {
+        console.error("Error updating inventory item: ", error);
+    }
+  }, [currentUser]);
 
-  const addLocation = useCallback((location: Omit<LocationType, 'id'>) => {
-    const newLocation = { ...location, id: `loc-${Date.now()}` };
-    setLocations(prev => [...prev, newLocation]);
-  }, []);
+  const addLocation = useCallback(async (location: Omit<LocationType, 'id'>) => {
+    if (!currentUser) return;
+    try {
+        const newLocation = { ...location, id: `loc-${Date.now()}` };
+        const locationRef = doc(db, 'users', currentUser.uid, 'locations', newLocation.id);
+        await setDoc(locationRef, newLocation);
+        setLocations(prev => [...prev, newLocation]);
+    } catch (error) {
+        console.error("Error adding location: ", error);
+    }
+  }, [currentUser]);
 
-  const addProject = useCallback((project: Omit<Project, 'id'>) => {
-    const newProject = { ...project, id: `proj-${Date.now()}`};
-    setProjects(prev => [...prev, newProject]);
-  }, []);
-  
+  const addProject = useCallback(async (project: Omit<Project, 'id'>) => {
+    if (!currentUser) return;
+    try {
+        const newProject = { ...project, id: `proj-${Date.now()}`};
+        const projectRef = doc(db, 'users', currentUser.uid, 'projects', newProject.id);
+        await setDoc(projectRef, newProject);
+        setProjects(prev => [...prev, newProject]);
+    } catch (error) {
+        console.error("Error adding project: ", error);
+    }
+  }, [currentUser]);
+
   const findComponentById = useCallback((id: string) => components.find(c => c.id === id), [components]);
   const findLocationById = useCallback((id: string) => locations.find(l => l.id === id), [locations]);
 
@@ -193,39 +192,40 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
   const getProjectsForComponent = useCallback((componentId: string) => {
       return projects.filter(p => p.components.some(c => c.componentId === componentId));
   }, [projects]);
-  
+
   const value = useMemo(() => ({
-    components, 
-    inventory, 
-    locations, 
+    components,
+    inventory,
+    locations,
     projects,
-    addComponent, 
-    deleteComponent, 
-    addInventoryItem, 
-    updateInventoryItem, 
+    loading,
+    addComponent,
+    deleteComponent,
+    addInventoryItem,
+    updateInventoryItem,
     addLocation,
     addProject,
-    findComponentById, 
-    findLocationById, 
+    findComponentById,
+    findLocationById,
     getInventoryWithDetails,
     getProjectsForComponent,
   }), [
-    components, 
-    inventory, 
-    locations, 
+    components,
+    inventory,
+    locations,
     projects,
-    addComponent, 
-    deleteComponent, 
-    addInventoryItem, 
-    updateInventoryItem, 
-    addLocation, 
+    loading,
+    addComponent,
+    deleteComponent,
+    addInventoryItem,
+    updateInventoryItem,
+    addLocation,
     addProject,
-    findComponentById, 
-    findLocationById, 
+    findComponentById,
+    findLocationById,
     getInventoryWithDetails,
     getProjectsForComponent,
   ]);
-
 
   return (
     <InventoryContext.Provider value={value}>
