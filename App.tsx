@@ -19,7 +19,7 @@ type Theme = 'light' | 'dark';
 // --- VIEWS ---
 
 // (All original views: IdentifyView, InventoryView, etc. remain here without changes)
-const IdentifyView: React.FC = () => {
+const IdentifyView: React.FC<{ onViewChange: (view: View) => void }> = ({ onViewChange }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [manualInput, setManualInput] = useState('');
@@ -34,7 +34,7 @@ const IdentifyView: React.FC = () => {
 
   const { addComponent, addInventoryItem, locations } = useInventory();
   const [quantity, setQuantity] = useState(1);
-  const [selectedLocation, setSelectedLocation] = useState<string>(locations[0]?.id || '');
+  const [selectedLocation, setSelectedLocation] = useState<string>('');
 
   useEffect(() => {
     try {
@@ -50,6 +50,12 @@ const IdentifyView: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('ws_identification_history', JSON.stringify(identificationHistory));
   }, [identificationHistory]);
+
+  useEffect(() => {
+    if (locations.length > 0 && !selectedLocation) {
+        setSelectedLocation(locations[0].id);
+    }
+  }, [locations, selectedLocation]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -120,7 +126,7 @@ const IdentifyView: React.FC = () => {
   }
 
   const handleAddToInventory = () => {
-    if (result) {
+    if (result && selectedLocation) {
       addComponent(result);
       addInventoryItem({
         componentId: result.id,
@@ -129,6 +135,7 @@ const IdentifyView: React.FC = () => {
       });
       setIsModalOpen(false);
       reset();
+      onViewChange(View.INVENTORY);
     }
   };
 
@@ -289,23 +296,35 @@ const IdentifyView: React.FC = () => {
       )}
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Add to Inventory">
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">{result?.name}</h3>
-          <div>
-            <label htmlFor="quantity" className="label-style">Quantity</label>
-            <input type="number" id="quantity" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="input-style mt-1 py-2 px-3" />
-          </div>
-          <div>
-            <label htmlFor="location" className="label-style">Location</label>
-            <select id="location" value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="input-style mt-1 py-2 px-3">
-              {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
-            </select>
-          </div>
-          <div className="flex justify-end gap-4">
-            <SecondaryButton onClick={() => setIsModalOpen(false)}>Cancel</SecondaryButton>
-            <Button onClick={handleAddToInventory}>Add Item</Button>
-          </div>
-        </div>
+        {locations.length > 0 ? (
+            <div className="space-y-4">
+                <h3 className="text-lg font-semibold">{result?.name}</h3>
+                <div>
+                    <label htmlFor="quantity" className="label-style">Quantity</label>
+                    <input type="number" id="quantity" min="1" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} className="input-style mt-1 py-2 px-3" />
+                </div>
+                <div>
+                    <label htmlFor="location" className="label-style">Location</label>
+                    <select id="location" value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)} className="input-style mt-1 py-2 px-3" required>
+                        {locations.map(loc => <option key={loc.id} value={loc.id}>{loc.name}</option>)}
+                    </select>
+                </div>
+                <div className="flex justify-end gap-4">
+                    <SecondaryButton onClick={() => setIsModalOpen(false)}>Cancel</SecondaryButton>
+                    <Button onClick={handleAddToInventory} disabled={!selectedLocation}>Add Item</Button>
+                </div>
+            </div>
+        ) : (
+            <div className="text-center p-4">
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">No Locations Found</h3>
+                <p className="text-gray-600 dark:text-gray-400 mt-2 mb-4">You need to create a storage location before you can add items to your inventory.</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">Please go to the 'Locations' tab to add one.</p>
+                 <div className="flex justify-center gap-4">
+                    <SecondaryButton onClick={() => setIsModalOpen(false)}>Close</SecondaryButton>
+                    <Button onClick={() => { setIsModalOpen(false); onViewChange(View.LOCATIONS); }}>Go to Locations</Button>
+                </div>
+            </div>
+        )}
       </Modal>
     </div>
   );
@@ -735,7 +754,7 @@ const App: React.FC = () => {
         return <div className="flex justify-center items-center h-full"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-500 dark:border-teal-400"></div></div>;
     }
     switch (currentView) {
-      case View.IDENTIFY: return <IdentifyView />;
+      case View.IDENTIFY: return <IdentifyView onViewChange={setCurrentView} />;
       case View.INVENTORY: return <InventoryView />;
       case View.IDEAS: return <ProjectIdeasView />;
       case View.MY_PROJECTS: return <MyProjectsView />;
