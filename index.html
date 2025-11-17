@@ -12,6 +12,16 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+    <script>
+      // Polyfill for process.env.API_KEY to prevent crash on static hosting.
+      // IMPORTANT: You must replace 'YOUR_API_KEY_HERE' with your actual Google AI API key for the app to function.
+      window.process = {
+        env: {
+          API_KEY: 'YOUR_API_KEY_HERE'
+        }
+      };
+    </script>
+
     <!-- Polyfill for import maps for browsers like older Safari -->
     <script async src="https://ga.jspm.io/npm:es-module-shims@1.10.0/dist/es-module-shims.js"></script>
 
