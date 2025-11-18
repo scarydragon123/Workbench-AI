@@ -1,11 +1,11 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useInventory } from './context';
-import { useAuth } from './auth';
-import { auth } from './firebase';
+import { useInventory } from './context.tsx';
+import { useAuth } from './auth.tsx';
+import { auth } from './firebase.ts';
 // Fix: Removed Firebase v9 modular imports for auth functions.
-import { Component, View, ProjectSuggestion, Location as LocationType } from './types';
-import { identifyComponent, getProjectIdeas, askAboutComponent } from './services';
-import { Button, SecondaryButton, CameraIcon, InventoryIcon, LightbulbIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard, ProjectDetailModal, SettingsIcon } from './components';
+import { Component, View, ProjectSuggestion, Location as LocationType } from './types.ts';
+import { identifyComponent, getProjectIdeas, askAboutComponent } from './services.ts';
+import { Button, SecondaryButton, CameraIcon, InventoryIcon, LightbulbIcon, LocationIcon, Modal, ComponentCard, ProjectCard, SearchIcon, ComponentDetailModal, AddComponentModal, ClipboardListIcon, AddProjectModal, ProjectManagementCard, ProjectDetailModal, SettingsIcon } from './components.tsx';
 
 // Fix: Removed conflicting global type declaration for window.aistudio.
 // The build environment provides this type, and redeclaring it causes a conflict.

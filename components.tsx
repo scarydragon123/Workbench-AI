@@ -1,7 +1,8 @@
 
+
 import React, { ReactNode, useState, useRef, useEffect } from 'react';
-import { Component, Location as LocationType, ProjectSuggestion, InventoryItem, Project, ProjectComponent } from './types';
-import { useInventory } from './context';
+import { Component, Location as LocationType, ProjectSuggestion, InventoryItem, Project, ProjectComponent } from './types.ts';
+import { useInventory } from './context.tsx';
 
 // --- Icons ---
 const iconProps = {

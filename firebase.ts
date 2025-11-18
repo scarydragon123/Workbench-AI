@@ -2,7 +2,7 @@
 import "firebase/compat/app";
 import "firebase/compat/auth";
 import "firebase/compat/firestore";
-import { firebaseConfig } from "./firebaseConfig";
+import { firebaseConfig } from "./firebaseConfig.ts";
 
 // The UMD scripts from the CDN attach the firebase object to the window.
 const firebaseApp = (window as any).firebase;

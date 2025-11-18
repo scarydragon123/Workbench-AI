@@ -1,9 +1,9 @@
 
 
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo, ReactNode } from 'react';
-import { InventoryItem, Component, Location as LocationType, Project } from './types';
-import { useAuth } from './auth';
-import { db } from './firebase';
+import { InventoryItem, Component, Location as LocationType, Project } from './types.ts';
+import { useAuth } from './auth.tsx';
+import { db } from './firebase.ts';
 // Fix: Removed Firebase v9 modular imports. v8 syntax uses methods on the db object.
 
 interface InventoryContextType {
