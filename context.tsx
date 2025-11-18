@@ -1,5 +1,8 @@
 
 
+
+
+
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo, ReactNode } from 'react';
 import { InventoryItem, Component, Location as LocationType, Project } from './types.ts';
 import { useAuth } from './auth.tsx';
@@ -214,7 +217,9 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
     loading,
     addComponent,
     deleteComponent,
+    // Fix: Cannot find name 'addInventoryitem'. Did you mean 'addInventoryItem'?
     addInventoryItem,
+    // Fix: Cannot find name 'updateInventoryitem'. Did you mean 'updateInventoryItem'?
     updateInventoryItem,
     addLocation,
     addProject,

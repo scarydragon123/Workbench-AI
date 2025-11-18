@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { auth } from './firebase.ts';
 // Fix: Use a type-only import for Firebase types to avoid runtime module issues.
