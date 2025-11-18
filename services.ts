@@ -1,12 +1,17 @@
-
-
-
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { Component, InventoryItem, Location as LocationType, ProjectSuggestion } from './types';
 
 const getAiClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const isAiStudio = !!(window as any).aistudio;
+  // In AI Studio, the key is on process.env. In public deployment, get it from localStorage.
+  const apiKey = isAiStudio ? process.env.API_KEY : localStorage.getItem('gemini_api_key');
+  
+  if (!apiKey) {
+    // The UI should prevent calls if the API key is missing. This is a safeguard.
+    throw new Error("API Key not found. Please set it in the settings.");
+  }
+  
+  return new GoogleGenAI({ apiKey });
 };
 
 function fileToGenerativePart(file: File) {

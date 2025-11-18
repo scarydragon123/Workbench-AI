@@ -1,5 +1,3 @@
-
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { useInventory } from './context';
 import { useAuth } from './auth';
@@ -20,6 +18,8 @@ const MoonIcon = () => <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/sv
 
 // --- THEME ---
 type Theme = 'light' | 'dark';
+type ApiKeyStatus = 'checking' | 'ready' | 'needed';
+
 
 // --- VIEWS ---
 type ViewComponent = Component & { justAdded?: boolean };
@@ -678,15 +678,30 @@ const LoginView: React.FC = () => {
     </div>
   );
 };
-const SettingsView: React.FC<{ theme: Theme, setTheme: (theme: Theme) => void }> = ({ theme, setTheme }) => {
+
+interface SettingsViewProps {
+    theme: Theme;
+    setTheme: (theme: Theme) => void;
+    setApiKeyStatus: (status: ApiKeyStatus) => void;
+}
+
+const SettingsView: React.FC<SettingsViewProps> = ({ theme, setTheme, setApiKeyStatus }) => {
     const { currentUser } = useAuth();
+    const isAiStudio = !!(window as any).aistudio;
+    
     const handleSignOut = () => {
-        // Fix: Use Firebase v8 syntax for signing out.
         auth.signOut();
     };
 
     const toggleTheme = () => {
         setTheme(theme === 'light' ? 'dark' : 'light');
+    };
+
+    const handleClearKey = () => {
+        if (!isAiStudio && confirm('Are you sure you want to clear your API key? You will need to re-enter it to use the app.')) {
+            localStorage.removeItem('gemini_api_key');
+            setApiKeyStatus('needed');
+        }
     };
 
     return (
@@ -716,6 +731,26 @@ const SettingsView: React.FC<{ theme: Theme, setTheme: (theme: Theme) => void }>
                     </div>
                 </div>
 
+                 {/* API Key Section - for public deployment only */}
+                {!isAiStudio && (
+                    <div className="pt-8">
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">API Key</h2>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                            <p>Your Google AI API key is stored in your browser's local storage.</p>
+                        </div>
+                        {localStorage.getItem('gemini_api_key') ? (
+                            <div className="flex items-center justify-between">
+                                <p className="font-mono text-gray-500 dark:text-gray-400">
+                                    Key is currently set.
+                                </p>
+                                <SecondaryButton onClick={handleClearKey}>Clear Key</SecondaryButton>
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-600 dark:text-gray-400">API Key is not set.</p>
+                        )}
+                    </div>
+                )}
+
                 {/* Account Section */}
                 <div className="pt-8">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">Account</h2>
@@ -743,6 +778,53 @@ const SettingsView: React.FC<{ theme: Theme, setTheme: (theme: Theme) => void }>
     );
 };
 
+const ApiKeyEntryView: React.FC<{ onKeySaved: () => void }> = ({ onKeySaved }) => {
+    const [apiKey, setApiKey] = useState('');
+    const handleSave = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (apiKey.trim()) {
+            localStorage.setItem('gemini_api_key', apiKey.trim());
+            onKeySaved();
+        }
+    };
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4">
+            <div className="w-full max-w-lg p-8 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg text-center">
+                <div className="mx-auto w-fit">
+                    <WorkshopIcon />
+                </div>
+                <h2 className="text-2xl font-bold">API Key Required</h2>
+                <p className="text-gray-600 dark:text-gray-400">
+                    To use Workshop AI, you need to provide a Google AI API key. Your key is stored in your browser's local storage and is not sent to any servers.
+                </p>
+                <form onSubmit={handleSave} className="space-y-4">
+                    <input
+                        type="password"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        className="input-style text-center"
+                        placeholder="Enter your Google AI API Key"
+                        required
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-500">
+                        You can get a key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:underline">Google AI Studio</a>.
+                    </p>
+                    <Button type="submit" className="w-full justify-center">
+                        Save and Continue
+                    </Button>
+                </form>
+                <p className="text-sm text-gray-500">
+                    Note: Use of the Gemini API may be subject to billing. For more details, see the&nbsp;
+                    <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:underline">
+                        billing documentation
+                    </a>.
+                </p>
+            </div>
+        </div>
+    );
+};
+
 
 // --- APP ---
 
@@ -750,7 +832,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.IDENTIFY);
   const { currentUser } = useAuth();
   const { loading: inventoryLoading } = useInventory();
-  const [apiKeyStatus, setApiKeyStatus] = useState<'checking' | 'ready' | 'needed'>('checking');
+  const [apiKeyStatus, setApiKeyStatus] = useState<ApiKeyStatus>('checking');
   const [theme, setTheme] = useState<Theme>(() => {
     if (typeof window !== 'undefined' && window.localStorage) {
       const storedTheme = window.localStorage.getItem('theme') as Theme | null;
@@ -762,7 +844,7 @@ const App: React.FC = () => {
     return 'light';
   });
 
-  const isAiStudio = !!window.aistudio;
+  const isAiStudio = !!(window as any).aistudio;
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -781,11 +863,11 @@ const App: React.FC = () => {
         setApiKeyStatus(hasKey ? 'ready' : 'needed');
       } else {
         // Standard environment (e.g., GitHub Pages)
-        const key = process.env.API_KEY;
-        if (key && key !== "PASTE_YOUR_API_KEY_HERE" && key.startsWith("AIza")) {
-          setApiKeyStatus('ready');
+        const key = localStorage.getItem('gemini_api_key');
+        if (key) {
+            setApiKeyStatus('ready');
         } else {
-          setApiKeyStatus('needed');
+            setApiKeyStatus('needed');
         }
       }
     };
@@ -815,7 +897,7 @@ const App: React.FC = () => {
   if (apiKeyStatus === 'needed') {
       if (isAiStudio) {
           return (
-              <div className={`min-h-screen flex items-center justify-center bg-gray-900 text-gray-100 p-4 ${theme}`}>
+              <div className="min-h-screen flex items-center justify-center bg-gray-900 text-gray-100 p-4">
                   <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-lg shadow-lg text-center">
                       <div className="text-teal-400 mx-auto">
                         <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -839,28 +921,7 @@ const App: React.FC = () => {
               </div>
           );
       }
-      return (
-          <div className={`min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 ${theme}`}>
-              <div className="w-full max-w-lg p-8 space-y-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg text-center">
-                  <WorkshopIcon />
-                  <h2 className="text-2xl font-bold">API Key Configuration Required</h2>
-                  <p className="text-gray-600 dark:text-gray-400">
-                      To begin, please edit the <code>index.html</code> file and add your Google AI API key.
-                  </p>
-                  <div className="mt-4 text-left text-sm bg-gray-200 dark:bg-gray-900 p-4 rounded-lg overflow-x-auto font-mono">
-                      <pre><code className="text-gray-800 dark:text-gray-200">
-                          {'<script>\n'}
-                          {'  // ...\n'}
-                          {'  window.process.env.API_KEY = "YOUR_API_KEY_HERE";\n'}
-                          {'</script>'}
-                      </code></pre>
-                  </div>
-                   <p className="text-sm text-gray-500 dark:text-gray-500 mt-4">
-                      After adding your key, refresh the page. For deployment on services like GitHub Pages, ensure your key's restrictions in the Google Cloud Console are configured to allow your website's URL.
-                  </p>
-              </div>
-          </div>
-      );
+      return <ApiKeyEntryView onKeySaved={() => setApiKeyStatus('ready')} />;
   }
   
   const renderView = () => {
@@ -873,7 +934,7 @@ const App: React.FC = () => {
       case View.IDEAS: return <ProjectIdeasView />;
       case View.MY_PROJECTS: return <MyProjectsView />;
       case View.LOCATIONS: return <LocationsView />;
-      case View.SETTINGS: return <SettingsView theme={theme} setTheme={setTheme} />;
+      case View.SETTINGS: return <SettingsView theme={theme} setTheme={setTheme} setApiKeyStatus={setApiKeyStatus} />;
       default: return <InventoryView />;
     }
   };
