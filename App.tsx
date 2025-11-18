@@ -817,16 +817,20 @@ const App: React.FC = () => {
           return (
               <div className={`min-h-screen flex items-center justify-center bg-gray-900 text-gray-100 p-4 ${theme}`}>
                   <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-lg shadow-lg text-center">
-                      <div className="text-teal-400 mx-auto animate-pulse">
-                          <svg className="w-12 h-12" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                              <circle cx="10" cy="10" r="2" fill="currentColor"/><circle cx="20" cy="10" r="2" fill="currentColor"/><circle cx="30" cy="10" r="2" fill="currentColor"/>
-                              <circle cx="10" cy="20" r="2" fill="currentColor"/><circle cx="20" cy="20" r="2" fill="currentColor"/><circle cx="30" cy="20" r="2" fill="currentColor"/>
-                              <circle cx="10" cy="30" r="2" fill="currentColor"/><circle cx="20" cy="30" r="2" fill="currentColor"/><circle cx="30" cy="30" r="2" fill="currentColor"/>
-                          </svg>
+                      <div className="text-teal-400 mx-auto">
+                        <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563.097-1.159.162-1.77.162a9 9 0 1 1 5.912-8.029A5.969 5.969 0 0 1 21 9zm-6 0a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+                        </svg>
                       </div>
                       <h2 className="text-2xl font-bold">API Key Required</h2>
                       <p className="text-gray-400">
                           To use Workshop AI, you need to select a Google AI API key. Your key is stored securely and is only used to communicate with the Gemini API.
+                      </p>
+                       <p className="text-sm text-gray-500">
+                        Note: Use of the Gemini API may be subject to billing. For more details, see the&nbsp;
+                        <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-teal-400 hover:underline">
+                          billing documentation
+                        </a>.
                       </p>
                       <Button onClick={handleSelectKey} className="w-full justify-center">
                           Select API Key

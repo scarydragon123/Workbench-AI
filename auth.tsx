@@ -1,12 +1,12 @@
 
 import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
 import { auth } from './firebase';
-// Fix: Use v8 syntax for auth types and methods by importing the firebase app object.
-import firebase from 'firebase/app';
-import 'firebase/auth'; // Import for side effects to augment firebase.User type
+// Fix: Use a type-only import for Firebase types to avoid runtime module issues.
+import type firebase from 'firebase/compat/app';
+import 'firebase/compat/auth'; // Import for side effects to augment firebase.User type
 
 interface AuthContextType {
-  // Fix: Use firebase.User type from v8 SDK
+  // Use the imported firebase type for the User object.
   currentUser: firebase.User | null;
   loading: boolean;
 }
@@ -14,7 +14,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Fix: Use firebase.User type from v8 SDK
+  // Use the imported firebase type for the User object.
   const [currentUser, setCurrentUser] = useState<firebase.User | null>(null);
   const [loading, setLoading] = useState(true);
 

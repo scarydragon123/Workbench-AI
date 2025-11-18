@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useEffect, useContext, useCallback, useMemo, ReactNode } from 'react';
 import { InventoryItem, Component, Location as LocationType, Project } from './types';
 import { useAuth } from './auth';
@@ -52,10 +53,12 @@ export const InventoryProvider: React.FC<{ children: ReactNode }> = ({ children 
             projectsRef.get()
           ]);
 
-          setComponents(componentsSnap.docs.map(doc => doc.data() as Component));
-          setInventory(inventorySnap.docs.map(doc => doc.data() as InventoryItem));
-          setLocations(locationsSnap.docs.map(doc => doc.data() as LocationType));
-          setProjects(projectsSnap.docs.map(doc => doc.data() as Project));
+          // By spreading doc.data(), we create a clean, plain JavaScript object.
+          // This prevents potential circular references from the Firestore SDK from leaking into the app's state.
+          setComponents(componentsSnap.docs.map(doc => ({ ...doc.data() } as Component)));
+          setInventory(inventorySnap.docs.map(doc => ({ ...doc.data() } as InventoryItem)));
+          setLocations(locationsSnap.docs.map(doc => ({ ...doc.data() } as LocationType)));
+          setProjects(projectsSnap.docs.map(doc => ({ ...doc.data() } as Project)));
 
         } catch (error) {
           console.error("Failed to fetch data from Firestore", error);

@@ -3,7 +3,7 @@
 
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { Component, InventoryItem, Location as LocationType } from './types';
+import { Component, InventoryItem, Location as LocationType, ProjectSuggestion } from './types';
 
 const getAiClient = () => {
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -119,14 +119,16 @@ export const identifyComponent = async (imageFile: File | null, manualInput: str
 
     try {
         const text = response.text.trim();
-        const parsedResponse = JSON.parse(text) as { components: ({ specs: { specName: string; specValue: string }[] } & Omit<Component, 'id' | 'imageUrl' | 'specs'>)[] };
+        const parsedResponse = JSON.parse(text);
         
-        if (!parsedResponse.components) {
+        if (!parsedResponse || !Array.isArray(parsedResponse.components)) {
             console.warn("Gemini response did not contain a 'components' array:", parsedResponse);
             return [];
         }
 
-        return parsedResponse.components.map(componentData => {
+        const componentsFromApi = parsedResponse.components as ({ specs: { specName: string; specValue: string }[] } & Omit<Component, 'id' | 'imageUrl' | 'specs'>)[];
+
+        return componentsFromApi.map(componentData => {
             const specsObject = (componentData.specs || []).reduce((acc, spec) => {
                 if (spec.specName && spec.specValue) {
                    acc[spec.specName] = spec.specValue;
@@ -176,7 +178,7 @@ export const askAboutComponent = async (component: Component, question: string):
     return response.text;
 };
 
-export const getProjectIdeas = async (inventory: (InventoryItem & { component: Component; location: LocationType })[]) => {
+export const getProjectIdeas = async (inventory: (InventoryItem & { component: Component; location: LocationType })[]): Promise<ProjectSuggestion[]> => {
     const ai = getAiClient();
     const model = 'gemini-2.5-pro';
     const availableComponents = inventory.map(item => ({ name: item.component.name, quantity: item.quantity }));
@@ -228,9 +230,13 @@ export const getProjectIdeas = async (inventory: (InventoryItem & { component: C
     try {
         const text = response.text.trim();
         const parsed = JSON.parse(text);
-        return parsed.projects;
+        if (parsed && Array.isArray(parsed.projects)) {
+            return parsed.projects;
+        }
+        console.error("Gemini project response is missing or has a malformed 'projects' array:", parsed);
+        throw new Error("Could not generate project ideas from the response.");
     } catch (e) {
-        console.error("Failed to parse Gemini project response:", response.text);
+        console.error("Failed to parse Gemini project response:", response.text, e);
         throw new Error("Could not generate project ideas from the response.");
     }
 };
