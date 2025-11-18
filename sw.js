@@ -4,8 +4,16 @@ const CACHE_NAME = 'workshop-ai-cache-v1';
 const urlsToCache = [
   './',
   './index.html',
-  './index.tsx',
-  // Note: We can't cache external resources from cdns in a simple setup
+  './manifest.json',
+  './index.js',
+  './App.js',
+  './auth.js',
+  './components.js',
+  './context.js',
+  './firebase.js',
+  './firebaseConfig.js',
+  './services.js',
+  './types.js',
 ];
 
 self.addEventListener('install', event => {

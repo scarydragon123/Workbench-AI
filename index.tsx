@@ -1,8 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import App from './App.tsx';
-import { InventoryProvider } from './context.tsx';
-import { AuthProvider } from './auth.tsx';
+import App from './App.js';
+import { InventoryProvider } from './context.js';
+import { AuthProvider } from './auth.js';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

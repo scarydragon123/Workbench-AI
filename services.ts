@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Component, InventoryItem, Location as LocationType, ProjectSuggestion } from './types.ts';
+import { Component, InventoryItem, Location as LocationType, ProjectSuggestion } from './types.js';
 
 const getAiClient = () => {
   const isAiStudio = !!(window as any).aistudio;
